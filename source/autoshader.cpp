@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <set>
 
 namespace autoshader {
 
@@ -151,6 +152,53 @@ namespace autoshader {
 		return fmt::format("{} {}", type_string(comp, t), name);
 	}
 
+	// the size of the type as declared in c
+	size_t c_type_size(spirv_cross::Compiler &comp, uint32_t t) {
+		using spirv_cross::SPIRType;
+		size_t unitsize = 0;
+		auto type = comp.get_type(t);
+		switch (type.basetype) {
+			case SPIRType::Void:
+			case SPIRType::Unknown:
+			case SPIRType::AtomicCounter:
+			case SPIRType::Image:
+			case SPIRType::SampledImage:
+			case SPIRType::Sampler:
+			case SPIRType::Boolean:
+				throw std::runtime_error("invalid type for structure member");
+
+			case SPIRType::Char:
+			case SPIRType::Int:
+			case SPIRType::UInt:
+			case SPIRType::Int64:
+			case SPIRType::UInt64:
+			case SPIRType::Half:
+			case SPIRType::Float:
+			case SPIRType::Double:
+				unitsize = type.width * type.vecsize * type.columns / 8;
+				break;
+
+			case SPIRType::Struct:
+				unitsize = comp.get_declared_struct_size(type);
+				break;
+		}
+
+		size_t m = 1;
+		for (auto s : type.array)
+			m *= s;
+
+		return m * unitsize;
+	}
+
+	string get_pad_name(int &index, std::set<string> &members) {
+		for (;;) {
+			string t = fmt::format("pad{}_", index);
+			index += 1;
+			if (members.insert(t).second)
+				return t;
+		}
+	}
+
 	string struct_definition(spirv_cross::Compiler &comp, uint32_t t) {
 		using spirv_cross::SPIRType;
 		SPIRType type = comp.get_type(t);
@@ -160,16 +208,42 @@ namespace autoshader {
 		fmt::memory_buffer r;
 		format_to(r, "struct {} {{ // {}\n", comp.get_name(t), comp.get_declared_struct_size(type));
 
+		// keep track of pad variables
+		int padindex = 0;
+		std::set<string> members;
+		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i)
+			members.insert(comp.get_member_name(t, i));
+
+		size_t offset = 0;
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
+			// Add padding to bring to the declared offset
+			auto memberoffset = comp.type_struct_member_offset(type, i);
+			while (offset < memberoffset) {
+				format_to(r, "  float {};\n", get_pad_name(padindex, members));
+				offset += 4;
+			}
+
+			// add the member declaration
 			format_to(r, "  {}; // {} {} {} {} {}\n", declare_var(comp, type.member_types[i],
 				comp.get_member_name(t, i)), comp.type_struct_member_offset(type, i),
 				comp.get_declared_struct_member_size(type, i),
 				comp.has_decoration(type.member_types[i], spv::DecorationArrayStride) ? comp.type_struct_member_array_stride(type, i) : 0,
 				comp.has_decoration(type.member_types[i], spv::DecorationMatrixStride) ? comp.type_struct_member_matrix_stride(type, i) : 0,
 				comp.get_member_qualified_name(t, i));
+
+			// update the size of the c structure
+			offset += c_type_size(comp, type.member_types[i]);
+		}
+
+		// pad up to the declared structure size (can this happen?)
+		size_t memberoffset = comp.get_declared_struct_size(type);
+		while (offset < memberoffset) {
+			format_to(r, "  float {};\n", get_pad_name(padindex, members));
+			offset += 4;
 		}
 
 		format_to(r, "}}", comp.get_name(t));
+
 		return to_string(r);
 	}
 

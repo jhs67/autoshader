@@ -4,6 +4,10 @@
 layout(std140) uniform Uniform1 {
 	vec4 test0;
 	vec2 test1;
+	vec3 test2;
+	float test3;
+	int test4;
+	double test5;
 };
 
 void main() {
