@@ -10,11 +10,15 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 	set(CMAKE_TOOLCHAIN_FILE "$ENV{HOME}/devel/external/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
+# Options
+option(AUTOSHADER_WarnAsError "Build the tests with warnings as errors." ON)
+
 project(autoshader)
 
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(cxxopts CONFIG REQUIRED)
 
 set(sources
 	source/autoshader.cpp
@@ -25,7 +29,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_RE
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-reflect)
 target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-core)
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
+target_link_libraries(${PROJECT_NAME} PRIVATE cxxopts::cxxopts)
+target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
 
-if( NOT MSVC )
+if( AUTOSHADER_WarnAsError AND NOT MSVC )
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 endif()

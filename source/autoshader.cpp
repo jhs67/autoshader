@@ -7,6 +7,8 @@
 
 #include "spirv_cross.hpp"
 #include <fmt/format.h>
+#include <cxxopts.hpp>
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 
@@ -15,18 +17,28 @@ namespace autoshader {
 	using std::string;
 	using std::vector;
 
-	vector<uint32_t> loadSpirv(const string &f) {
+	vector<uint32_t> load_spirv(const std::string &f, std::istream &str) {
+		vector<uint32_t> r(64 * 1024);
+		for (size_t s = 0;;) {
+			str.read(reinterpret_cast<char*>(r.data()) + s, 4 * r.size() - s);
+			if (str.bad())
+				throw std::runtime_error("error loading spriv from " + f);
+			s += str.gcount();
+			if (str.eof()) {
+				if (s & 3)
+					throw std::runtime_error("invalid spirv file length for " + f);
+				r.resize(s / 4);
+				return r;
+			}
+
+		}
+	}
+
+	vector<uint32_t> load_spirv(const string &f) {
 		std::ifstream str(f);
-		str.seekg(0, str.end);
-		size_t l = str.tellg();
-		str.seekg(0, str.beg);
-		if ((l & 3) != 0)
-			throw std::runtime_error("invalid spirv file length for file " + f);
-		vector<uint32_t> r(l / 4);
-		str.read(reinterpret_cast<char*>(r.data()), 4 * r.size());
 		if (!str.good())
-			throw std::runtime_error("error loading spriv file " + f);
-		return r;
+			throw std::runtime_error("failed to open file: " + f);
+		return load_spirv("file " + f, str);
 	}
 
 	string vector_string(spirv_cross::SPIRType const& type, const char *base,
@@ -149,155 +161,104 @@ namespace autoshader {
 		format_to(r, "struct {} {{ // {}\n", comp.get_name(t), comp.get_declared_struct_size(type));
 
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
-			format_to(r, "  {}; // {}\n", declare_var(comp, type.member_types[i],
-				comp.get_member_name(t, i)), comp.type_struct_member_offset(type, i));
+			format_to(r, "  {}; // {} {} {} {} {}\n", declare_var(comp, type.member_types[i],
+				comp.get_member_name(t, i)), comp.type_struct_member_offset(type, i),
+				comp.get_declared_struct_member_size(type, i),
+				comp.has_decoration(type.member_types[i], spv::DecorationArrayStride) ? comp.type_struct_member_array_stride(type, i) : 0,
+				comp.has_decoration(type.member_types[i], spv::DecorationMatrixStride) ? comp.type_struct_member_matrix_stride(type, i) : 0,
+				comp.get_member_qualified_name(t, i));
 		}
 
 		format_to(r, "}}", comp.get_name(t));
 		return to_string(r);
 	}
 
-	void inspectType(spirv_cross::Compiler &comp, uint32_t t) {
-		using spirv_cross::SPIRType;
-		auto type = comp.get_type(t);
-		switch (type.basetype) {
-			case SPIRType::Unknown: {
-				std::cout << "Unknown" << std::endl;
-				break;
-			}
-			case SPIRType::Void: {
-				std::cout << fmt::format("Void: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Boolean: {
-				std::cout << fmt::format("Boolean: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Char: {
-				std::cout << fmt::format("Char: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Int: {
-				std::cout << fmt::format("Int: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::UInt: {
-				std::cout << fmt::format("UInt: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Int64: {
-				std::cout << fmt::format("Int64: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::UInt64: {
-				std::cout << fmt::format("UInt64: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::AtomicCounter: {
-				std::cout << "AtomicCounter" << std::endl;
-				break;
-			}
-			case SPIRType::Half: {
-				std::cout << "Half" << std::endl;
-				break;
-			}
-			case SPIRType::Float: {
-				std::cout << fmt::format("Float: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Double: {
-				std::cout << fmt::format("Double: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::Struct: {
-				std::cout << fmt::format("Struct {} {}\n{}", comp.get_name(t), type.width, struct_definition(comp, t)) << std::endl;
-				for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
-					std::cout << fmt::format("  member {} name: {}", i, comp.get_member_name(t, i)) << std::endl;
-					inspectType(comp, type.member_types[i]);
-				}
-				break;
-			}
-			case SPIRType::Image: {
-				std::cout << fmt::format("Image: {} {}", type_string(comp, t), type.width) << std::endl;
-				break;
-			}
-			case SPIRType::SampledImage: {
-				std::cout << "SampledImage" << std::endl;
-				break;
-			}
-			case SPIRType::Sampler: {
-				std::cout << "Sampler" << std::endl;
-				break;
+
+	void get_dependant_structs(vector<uint32_t> &r, spirv_cross::Compiler &comp, uint32_t b) {
+		if (std::any_of(r.begin(), r.end(), [b] (auto r) { return r == b; }))
+			return;
+		auto type = comp.get_type(b);
+		if (type.basetype != spirv_cross::SPIRType::Struct)
+			throw std::runtime_error(fmt::format("get_dependant_structs called with non struct type {}", type.basetype));
+		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
+			uint32_t t = type.member_types[i];
+			auto mtype = comp.get_type(t);
+			if (mtype.basetype == spirv_cross::SPIRType::Struct) {
+				get_dependant_structs(r, comp, t);
 			}
 		}
+		r.push_back(b);
 	}
 
-	void dumpResources(spirv_cross::Compiler &comp, spirv_cross::Resource r) {
-		unsigned set = comp.get_decoration(r.id, spv::DecorationDescriptorSet);
-		unsigned binding = comp.get_decoration(r.id, spv::DecorationBinding);
-		std::cout << fmt::format("  {} {} {}", r.name, set, binding);
-		inspectType(comp, r.type_id);
-	}
-
-	void main(string f) {
-		auto spirv = loadSpirv(f);
-		spirv_cross::Compiler comp(move(spirv));
+	void find_buffer_structs(vector<uint32_t> &r, spirv_cross::Compiler &comp) {
 		spirv_cross::ShaderResources res = comp.get_shader_resources();
+		for (auto &v : res.uniform_buffers)
+			get_dependant_structs(r, comp, v.base_type_id);
+		for (auto &v : res.storage_buffers)
+			get_dependant_structs(r, comp, v.base_type_id);
+		for (auto &v : res.push_constant_buffers)
+			get_dependant_structs(r, comp, v.base_type_id);
+	}
 
-		std::cout << "uniform_buffers" << std::endl;
-		for (auto &r : res.uniform_buffers) {
-			dumpResources(comp, r);
+	int main(int ac, char *av[]) {
+		auto prog = std::filesystem::path(av[0]).filename();
+		cxxopts::Options opts(prog, "automatic shader reflection to c++");
+
+		opts
+		.show_positional_help()
+		.positional_help("input*")
+		.add_options()
+			("h,help", "print help")
+			("i,input", "input spirv file (stdin if missing)", cxxopts::value<vector<string>>())
+			("o,output", "output source file (stdout if missing)", cxxopts::value<string>());
+		opts.parse_positional({ "input" });
+
+		auto options = opts.parse(ac, av);
+
+		if (options["help"].as<bool>()) {
+			std::cerr << opts.help() << std::endl;
+			return 0;
 		}
 
-		std::cout << "storage_buffers" << std::endl;
-		for (auto &r : res.storage_buffers) {
-			dumpResources(comp, r);
+		string out = "\n";
+		auto input = options["input"].as<vector<string>>();
+		if (input.empty()) {
+			spirv_cross::Compiler comp(load_spirv("stdin", std::cin));
+			vector<uint32_t> r;
+			find_buffer_structs(r, comp);
+			for (auto t : r)
+				out += struct_definition(comp, t) + ";\n\n";
+		}
+		for (auto i : input) {
+			spirv_cross::Compiler comp(load_spirv(i));
+			vector<uint32_t> r;
+			find_buffer_structs(r, comp);
+			for (auto t : r)
+				out += struct_definition(comp, t) + ";\n\n";
 		}
 
-		std::cout << "stage_inputs" << std::endl;
-		for (auto &r : res.stage_inputs) {
-			dumpResources(comp, r);
+		if (options.count("output") == 0) {
+			std::cout.write(out.data(), out.size());
+		}
+		else {
+			auto outname = options["output"].as<string>();
+			std::ofstream str(outname);
+			str.write(out.data(), out.size());
+			if (!str.good())
+				throw std::runtime_error("error writing output to: " + outname);
 		}
 
-		std::cout << "stage_outputs" << std::endl;
-		for (auto &r : res.stage_outputs) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "subpass_inputs" << std::endl;
-		for (auto &r : res.subpass_inputs) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "storage_images" << std::endl;
-		for (auto &r : res.storage_images) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "sampled_images" << std::endl;
-		for (auto &r : res.sampled_images) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "push_constant_buffers" << std::endl;
-		for (auto &r : res.push_constant_buffers) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "separate_images" << std::endl;
-		for (auto &r : res.separate_images) {
-			dumpResources(comp, r);
-		}
-
-		std::cout << "separate_samplers" << std::endl;
-		for (auto &r : res.separate_samplers) {
-			dumpResources(comp, r);
-		}
-
+		return 0;
 	}
 
 } // namespace autoshader
 
-int main(int ac, const char *av[]) {
-	autoshader::main(av[1]);
+int main(int ac, char *av[]) {
+	try {
+		return autoshader::main(ac, av);
+	}
+	catch (std::exception &err) {
+		std::cerr << av[0] << " failed: " << err.what() << std::endl;
+	}
+	return 10;
 }
