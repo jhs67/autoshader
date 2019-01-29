@@ -1,0 +1,10 @@
+
+#version 450
+
+layout(std140) uniform Uniform1 {
+	vec4 test0;
+	vec2 test1;
+};
+
+void main() {
+}

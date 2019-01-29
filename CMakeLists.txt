@@ -11,6 +11,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 # Options
+option(AUTOSHADER_BuildTests "Build the unit tests when BUILD_TESTING is enabled." ON)
 option(AUTOSHADER_WarnAsError "Build the tests with warnings as errors." ON)
 
 project(autoshader)
@@ -34,4 +35,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
 
 if( AUTOSHADER_WarnAsError AND NOT MSVC )
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+endif()
+
+include(CTest)
+
+if(BUILD_TESTING AND AUTOSHADER_BuildTests)
+	enable_testing()
+	add_subdirectory(test)
 endif()
