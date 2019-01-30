@@ -148,10 +148,6 @@ namespace autoshader {
 		throw std::runtime_error("invalid type can't be converted to string");
 	}
 
-	string declare_var(spirv_cross::Compiler &comp, uint32_t t, string name) {
-		return fmt::format("{} {}", type_string(comp, t), name);
-	}
-
 	// the size of the type as declared in c
 	size_t c_type_size(spirv_cross::Compiler &comp, uint32_t t) {
 		using spirv_cross::SPIRType;
@@ -188,6 +184,15 @@ namespace autoshader {
 			m *= s;
 
 		return m * unitsize;
+	}
+
+	string declare_var(spirv_cross::Compiler &comp, uint32_t t, string name) {
+		auto type = comp.get_type(t);
+		fmt::memory_buffer r;
+		format_to(r, "{} {}", type_string(comp, t), name);
+		for (size_t i = type.array.size(); i-- != 0;)
+			format_to(r, "[{}]", type.array[i]);
+		return to_string(r);
 	}
 
 	string get_pad_name(int &index, std::set<string> &members) {

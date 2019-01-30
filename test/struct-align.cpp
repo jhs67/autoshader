@@ -26,7 +26,10 @@ TEST_CASE( "struct-align" ) {
 		REQUIRE( offsetof(shader::Uniform1, test3) == 44 );
 		REQUIRE( offsetof(shader::Uniform1, test4) == 48 );
 		REQUIRE( offsetof(shader::Uniform1, test5) == 56 );
-		REQUIRE( sizeof(shader::Uniform1) == 64 );
+		REQUIRE( offsetof(shader::Uniform1, test6) == 64 );
+		REQUIRE( sizeof(shader::Uniform1::test6) == 64 );
+		REQUIRE( offsetof(shader::Uniform1, test7) == 128 );
+		REQUIRE( sizeof(shader::Uniform1) == 144 );
 
 	}
 
