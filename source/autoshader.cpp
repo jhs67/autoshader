@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <numeric>
 #include <set>
 
 namespace autoshader {
@@ -151,8 +152,12 @@ namespace autoshader {
 	// the size of the type as declared in c
 	size_t c_type_size(spirv_cross::Compiler &comp, uint32_t t) {
 		using spirv_cross::SPIRType;
-		size_t unitsize = 0;
 		auto type = comp.get_type(t);
+
+		// array's will get the correct padding to match the stride
+		if (!type.array.empty())
+			return type.array.back() * comp.get_decoration(t, spv::DecorationArrayStride);
+
 		switch (type.basetype) {
 			case SPIRType::Void:
 			case SPIRType::Unknown:
@@ -171,27 +176,50 @@ namespace autoshader {
 			case SPIRType::Half:
 			case SPIRType::Float:
 			case SPIRType::Double:
-				unitsize = type.width * type.vecsize * type.columns / 8;
-				break;
+				return type.width * type.vecsize * type.columns / 8;
 
 			case SPIRType::Struct:
-				unitsize = comp.get_declared_struct_size(type);
-				break;
+				// struct's will be padded to the declared size
+				return comp.get_declared_struct_size(type);
 		}
 
-		size_t m = 1;
-		for (auto s : type.array)
-			m *= s;
-
-		return m * unitsize;
+		throw std::runtime_error("invalid type for structure member");
 	}
 
-	string declare_var(spirv_cross::Compiler &comp, uint32_t t, string name) {
-		auto type = comp.get_type(t);
+
+	string declare_member(spirv_cross::Compiler &comp, uint32_t t, uint32_t m) {
+		auto stct = comp.get_type(t);
+		string name = comp.get_member_name(t, m);
+		auto type = comp.get_type(stct.member_types[m]);
+
+		int p = 0;
+		if (!type.array.empty()) {
+			// check if the array stride doesn't match the underlying type
+			uint32_t l = type.array.back();
+			uint32_t s = comp.type_struct_member_array_stride(stct, m);
+			uint32_t t = std::accumulate(begin(type.array), end(type.array), uint32_t(1),
+				[] (auto a, auto b) { return a * b; });
+			uint32_t c = c_type_size(comp, type.self);
+			p = s * l / t - c;
+		}
+
 		fmt::memory_buffer r;
-		format_to(r, "{} {}", type_string(comp, t), name);
+		if (p != 0) {
+			// create a structure to hold the value and pading
+			uint32_t i = 0;
+			format_to(r, "struct {{ {} v; float p0", type_string(comp, type.self));
+			while ((p -= 4) > 0)
+				format_to(r, ", p{}", ++i);
+			format_to(r, "; }} {}", name);
+		}
+		else {
+			format_to(r, "{} {}", type_string(comp, type.self), name);
+		}
+
+		// add the array elements
 		for (size_t i = type.array.size(); i-- != 0;)
 			format_to(r, "[{}]", type.array[i]);
+
 		return to_string(r);
 	}
 
@@ -202,6 +230,16 @@ namespace autoshader {
 			if (members.insert(t).second)
 				return t;
 		}
+	}
+
+	void add_padding(fmt::memory_buffer &r, size_t &offset, size_t target,
+			int &index, std::set<string> &members) {
+		if (offset >= target)
+			return;
+		format_to(r, "  float {}", get_pad_name(index, members));
+		while ((offset += 4) < target)
+			format_to(r, ", {}", get_pad_name(index, members));
+		format_to(r, ";\n");
 	}
 
 	string struct_definition(spirv_cross::Compiler &comp, uint32_t t) {
@@ -222,15 +260,11 @@ namespace autoshader {
 		size_t offset = 0;
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
 			// Add padding to bring to the declared offset
-			auto memberoffset = comp.type_struct_member_offset(type, i);
-			while (offset < memberoffset) {
-				format_to(r, "  float {};\n", get_pad_name(padindex, members));
-				offset += 4;
-			}
+			add_padding(r, offset, comp.type_struct_member_offset(type, i), padindex, members);
 
 			// add the member declaration
-			format_to(r, "  {}; // {} {} {} {} {}\n", declare_var(comp, type.member_types[i],
-				comp.get_member_name(t, i)), comp.type_struct_member_offset(type, i),
+			format_to(r, "  {}; // {} {} {} {} {}\n", declare_member(comp, t, i),
+				comp.type_struct_member_offset(type, i),
 				comp.get_declared_struct_member_size(type, i),
 				comp.has_decoration(type.member_types[i], spv::DecorationArrayStride) ? comp.type_struct_member_array_stride(type, i) : 0,
 				comp.has_decoration(type.member_types[i], spv::DecorationMatrixStride) ? comp.type_struct_member_matrix_stride(type, i) : 0,
@@ -241,11 +275,7 @@ namespace autoshader {
 		}
 
 		// pad up to the declared structure size (can this happen?)
-		size_t memberoffset = comp.get_declared_struct_size(type);
-		while (offset < memberoffset) {
-			format_to(r, "  float {};\n", get_pad_name(padindex, members));
-			offset += 4;
-		}
+		add_padding(r, offset, comp.get_declared_struct_size(type), padindex, members);
 
 		format_to(r, "}}", comp.get_name(t));
 
@@ -262,8 +292,9 @@ namespace autoshader {
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
 			uint32_t t = type.member_types[i];
 			auto mtype = comp.get_type(t);
-			if (mtype.basetype == spirv_cross::SPIRType::Struct) {
-				get_dependant_structs(r, comp, t);
+			auto s = comp.get_type(mtype.self);
+			if (s.basetype == spirv_cross::SPIRType::Struct) {
+				get_dependant_structs(r, comp, mtype.self);
 			}
 		}
 		r.push_back(b);

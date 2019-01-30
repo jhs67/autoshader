@@ -1,6 +1,10 @@
 
 #version 450
 
+struct Foo {
+	float a, b;
+};
+
 layout(std140) uniform Uniform1 {
 	vec4 test0;
 	vec2 test1;
@@ -10,6 +14,9 @@ layout(std140) uniform Uniform1 {
 	double test5;
 	vec4 test6[4];
 	ivec4 test7;
+	vec3 test8[3];
+	vec4 test9;
+	Foo test10[2][3];
 };
 
 void main() {

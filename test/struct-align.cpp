@@ -20,6 +20,7 @@ TEST_CASE( "struct-align" ) {
 
 	SECTION( "std140 basic rules" ) {
 
+		shader::Uniform1 uni1;
 		REQUIRE( offsetof(shader::Uniform1, test0) == 0 );
 		REQUIRE( offsetof(shader::Uniform1, test1) == 16 );
 		REQUIRE( offsetof(shader::Uniform1, test2) == 32 );
@@ -29,7 +30,9 @@ TEST_CASE( "struct-align" ) {
 		REQUIRE( offsetof(shader::Uniform1, test6) == 64 );
 		REQUIRE( sizeof(shader::Uniform1::test6) == 64 );
 		REQUIRE( offsetof(shader::Uniform1, test7) == 128 );
-		REQUIRE( sizeof(shader::Uniform1) == 144 );
+		REQUIRE( (&uni1.test8[1].v.x - &uni1.test8[0].v.x) == 4 );
+		REQUIRE( (size_t(&uni1.test10[1][0]) - size_t(&uni1.test10[0][0])) == 48 );
+		REQUIRE( sizeof(shader::Uniform1) == 304 );
 
 	}
 
