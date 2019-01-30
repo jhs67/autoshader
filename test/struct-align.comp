@@ -17,6 +17,8 @@ layout(std140) uniform Uniform1 {
 	vec3 test8[3];
 	vec4 test9;
 	Foo test10[2][3];
+	mat3 test11;
+	mat3 test12[2];
 };
 
 void main() {

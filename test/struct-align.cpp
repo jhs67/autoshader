@@ -32,7 +32,8 @@ TEST_CASE( "struct-align" ) {
 		REQUIRE( offsetof(shader::Uniform1, test7) == 128 );
 		REQUIRE( (&uni1.test8[1].v.x - &uni1.test8[0].v.x) == 4 );
 		REQUIRE( (size_t(&uni1.test10[1][0]) - size_t(&uni1.test10[0][0])) == 48 );
-		REQUIRE( sizeof(shader::Uniform1) == 304 );
+		REQUIRE( (size_t(&uni1.test11[1]) - size_t(&uni1.test11[0])) == 16 );
+		REQUIRE( sizeof(shader::Uniform1) == 448 );
 
 	}
 
