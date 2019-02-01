@@ -71,10 +71,13 @@ add_custom_target(autoshader-test)
 
 set(files
   struct-align.cpp
+  name-map.cpp
   )
 
 set(shaders
   struct-align.comp
+  name-map.vert
+  name-map.frag
   )
 
 # compile the shaders to spirv
@@ -93,7 +96,8 @@ foreach(file ${files})
   set(test_shaders ${shaders})
   list(FILTER test_shaders INCLUDE REGEX "${basename}\\..*")
   if(test_shaders)
-    string(REGEX REPLACE "([^;]+)" "\\1.spv" test_spirv ${test_shaders})
+    set(test_spirv ${test_shaders})
+    list(TRANSFORM test_spirv APPEND ".spv")
     compile_autoshader("${basename}-autoshader.h" ${test_spirv})
     list(APPEND test_files "${basename}-autoshader.h")
   endif()
