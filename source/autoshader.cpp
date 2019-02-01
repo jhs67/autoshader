@@ -104,20 +104,20 @@ namespace autoshader {
 				return "char";
 			}
 			case SPIRType::Int: {
-				return vector_string(type, "int", "ivec");
+				return vector_string(type, "int32_t", "ivec");
 			}
 			case SPIRType::UInt: {
-				return vector_string(type, "uint", "uvec");
+				return vector_string(type, "uint32_t", "uvec");
 			}
 			case SPIRType::Int64: {
 				if (type.vecsize != 1 || type.columns != 1)
 					throw std::runtime_error("invalid vector of int64's");
-				return "int64";
+				return "int64_t";
 			}
 			case SPIRType::UInt64: {
 				if (type.vecsize != 1 || type.columns != 1)
 					throw std::runtime_error("invalid vector of uint64's");
-				return "uint64";
+				return "uint64_t";
 			}
 			case SPIRType::AtomicCounter: {
 				throw std::runtime_error("automic counter's not supported");

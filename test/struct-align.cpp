@@ -34,7 +34,13 @@ TEST_CASE( "struct-align" ) {
 		REQUIRE( (size_t(&uni1.test10[1][0]) - size_t(&uni1.test10[0][0])) == 48 );
 		REQUIRE( (size_t(&uni1.test11[1]) - size_t(&uni1.test11[0])) == 16 );
 		REQUIRE( sizeof(shader::Uniform1) == 448 );
+	}
 
+	SECTION( "std430 integers rules" ) {
+
+		REQUIRE( offsetof(shader::Buffer1, a) == 0 );
+		REQUIRE( offsetof(shader::Buffer1, c) == 4 );
+		REQUIRE( sizeof(shader::Buffer1) == 8 );
 	}
 
 }
