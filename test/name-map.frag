@@ -5,7 +5,7 @@ struct Foo {
 	vec4 c, d;
 };
 
-layout(std140) uniform Uniform2 {
+layout(std140, binding = 1) uniform Uniform2 {
 	Foo foo;
 };
 

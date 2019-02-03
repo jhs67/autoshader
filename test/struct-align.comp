@@ -21,7 +21,7 @@ layout(std140) uniform Uniform1 {
 	mat3 test12[2];
 };
 
-layout(std430) buffer Buffer1 {
+layout(std430, binding=1) buffer Buffer1 {
 	int a;
 	uint c;
 };

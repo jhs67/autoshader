@@ -59,6 +59,7 @@ endfunction()
 
 project(autoshader-test)
 
+find_package(Vulkan REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
@@ -72,12 +73,15 @@ add_custom_target(autoshader-test)
 set(files
   struct-align.cpp
   name-map.cpp
+  descriptor-set-layout.cpp
   )
 
 set(shaders
   struct-align.comp
   name-map.vert
   name-map.frag
+  descriptor-set-layout.vert
+  descriptor-set-layout.frag
   )
 
 # compile the shaders to spirv
@@ -107,6 +111,7 @@ foreach(file ${files})
   set_target_properties(${testcase} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(${testcase} PRIVATE ${PROJECT_NAME}-main)
   target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
+  target_link_libraries(${testcase} PRIVATE Vulkan::Vulkan)
   target_link_libraries(${testcase} PRIVATE glm)
   target_include_directories(${testcase} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

@@ -13,12 +13,12 @@ struct Faa {
 	float d;
 };
 
-layout(std140) uniform Uniform1 {
+layout(std140, binding = 2) uniform Uniform1 {
 	Foo foo;
 	Faa faa;
 };
 
-layout(std430) buffer Buffer1 {
+layout(std430, binding = 0) buffer Buffer1 {
 	Faa blah;
 };
 

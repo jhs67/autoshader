@@ -273,10 +273,10 @@ namespace autoshader {
 		int arrpad = 0;
 		auto carrsize = ccolsize * arrtype.columns;
 		if (!type.array.empty()) {
-			auto l = type.array.back();
+			auto l = std::max(type.array.back(), uint32_t(1));
 			auto s = comp.type_struct_member_array_stride(stct, m);
 			auto t = std::accumulate(begin(type.array), end(type.array), uint32_t(1),
-				[] (auto a, auto b) { return a * b; });
+				[] (auto a, auto b) { return a * std::max(b, uint32_t(1)); });
 			arrpad = s * l / t - carrsize;
 			carrsize += arrpad;
 		}
@@ -398,6 +398,124 @@ namespace autoshader {
 			get_dependant_structs(r, comp, v.base_type_id);
 	}
 
+	enum struct DescriptorType {
+		Sampler,
+		ImageSampler,
+		SampledImage,
+		StorageImage,
+		Uniform,
+		StorageBuffer,
+	};
+
+	const char *vulkan_descriptor_type(DescriptorType type) {
+		switch (type) {
+			case DescriptorType::Sampler: return "vk::DescriptorType::eSampler";
+			case DescriptorType::ImageSampler: return "vk::DescriptorType::eCombinedImageSampler";
+			case DescriptorType::SampledImage: return "vk::DescriptorType::eSampledImage";
+			case DescriptorType::StorageImage: return "vk::DescriptorType::eStorageImage";
+			case DescriptorType::Uniform: return "vk::DescriptorType::eUniformBuffer";
+			case DescriptorType::StorageBuffer: return "vk::DescriptorType::eStorageBuffer";
+		}
+		throw std::runtime_error("internal error: invalid descriptor type");
+	}
+
+	const char *vulkan_stage_string(spv::ExecutionModel e) {
+		switch (e) {
+			case spv::ExecutionModelVertex:
+				return "vk::ShaderStageFlagBits::eVertex";
+			case spv::ExecutionModelTessellationControl:
+				return "vk::ShaderStageFlagBits::eTessellationControl";
+			case spv::ExecutionModelTessellationEvaluation:
+				return "vk::ShaderStageFlagBits::eTessellationEvaluation";
+			case spv::ExecutionModelGeometry:
+				return "vk::ShaderStageFlagBits::eGeometry";
+			case spv::ExecutionModelFragment:
+				return "vk::ShaderStageFlagBits::eFragment";
+			case spv::ExecutionModelGLCompute:
+				return "vk::ShaderStageFlagBits::eCompute";
+			default: break;
+		}
+		throw std::runtime_error("unsupported execution model for shader");
+	}
+
+	void vulkan_stage_flags(fmt::memory_buffer &r, std::set<spv::ExecutionModel> const& stages) {
+		bool s = false;
+		for (auto e : stages) {
+			if (s)
+				format_to(r, " | ");
+			format_to(r, "{}", vulkan_stage_string(e));
+			s = true;
+		}
+	}
+
+	struct DescriptorRecord {
+		std::set<spv::ExecutionModel> stages;
+		DescriptorType type;
+		spv::Dim imagedim;
+		int arraysize;
+	};
+
+	struct DescriptorSet {
+		std::map<uint32_t, DescriptorRecord> descriptors;
+	};
+
+	void get_descriptor_sets(std::map<uint32_t, DescriptorSet> &ds, spirv_cross::Compiler &comp,
+			spv::ExecutionModel em, std::vector<spirv_cross::Resource> &res, DescriptorType d) {
+
+		for (auto &v : res) {
+			auto set = comp.get_decoration(v.id, spv::DecorationDescriptorSet);
+			auto bin = comp.get_decoration(v.id, spv::DecorationBinding);
+			auto type = comp.get_type(v.base_type_id);
+			auto var = comp.get_type(v.type_id);
+			int as = var.array.empty() ? 1 : var.array.front();
+			auto t = ds[set].descriptors.emplace(bin,
+				DescriptorRecord{ {}, d, type.image.dim, as });
+			if (t.first->second.type != d)
+				throw std::runtime_error(fmt::format(
+					"type mismatch for descriptor(set={} binding={})", set, bin));
+			if (t.first->second.imagedim != type.image.dim)
+				throw std::runtime_error(fmt::format(
+					"image dimension mismatch for descriptor(set={} binding={})", set, bin));
+			if (t.first->second.arraysize != as)
+				throw std::runtime_error(fmt::format(
+					"array size mismatch for descriptor(set={} binding={})", set, bin));
+			t.first->second.stages.insert(em);
+		}
+	}
+
+	void get_descriptor_sets(std::map<uint32_t, DescriptorSet> &r, spirv_cross::Compiler &comp) {
+		auto ep = comp.get_entry_points_and_stages();
+		if (ep.empty())
+			throw std::runtime_error("shader stages has no entry point");
+		auto em = ep[0].execution_model;
+
+		spirv_cross::ShaderResources res = comp.get_shader_resources();
+		get_descriptor_sets(r, comp, em, res.uniform_buffers, DescriptorType::Uniform);
+		get_descriptor_sets(r, comp, em, res.storage_buffers, DescriptorType::StorageBuffer);
+		get_descriptor_sets(r, comp, em, res.storage_images, DescriptorType::StorageImage);
+		get_descriptor_sets(r, comp, em, res.sampled_images, DescriptorType::ImageSampler);
+		get_descriptor_sets(r, comp, em, res.separate_images, DescriptorType::SampledImage);
+		get_descriptor_sets(r, comp, em, res.separate_samplers, DescriptorType::Sampler);
+	}
+
+	string descriptor_layout(const DescriptorSet &set, const string &name) {
+		bool c = false;
+		fmt::memory_buffer r;
+		format_to(r, "auto get{}LayoutBindings() {{\n", name);
+		format_to(r, "  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{",
+			set.descriptors.size());
+		for (auto &d : set.descriptors) {
+			format_to(r, c ? ",\n" : "\n");
+			format_to(r, "    {{ {}, {}, {}, ", d.first,
+				vulkan_descriptor_type(d.second.type), d.second.arraysize);
+			vulkan_stage_flags(r, d.second.stages);
+			format_to(r, " }}");
+			c = true;
+		}
+		format_to(r, "\n  }}}});\n}}");
+		return to_string(r);
+	}
+
 	struct StructIndex {
 		size_t sh;
 		uint32_t st;
@@ -512,17 +630,20 @@ namespace autoshader {
 		// load all the shader stages and find all public structure definitions
 		auto input = options["input"].as<vector<string>>();
 		vector<ShaderRecord> shaders;
+		std::map<uint32_t, DescriptorSet> descriptorSets;
 		if (input.empty()) {
 			shaders.emplace_back();
 			auto &sh = shaders.back();
 			sh.comp.reset(new spirv_cross::Compiler(load_spirv("stdin", std::cin)));
 			find_buffer_structs(sh.structs, *sh.comp);
+			get_descriptor_sets(descriptorSets, *sh.comp);
 		}
 		for (auto i : input) {
 			shaders.emplace_back();
 			auto &sh = shaders.back();
 			sh.comp.reset(new spirv_cross::Compiler(load_spirv(i)));
 			find_buffer_structs(sh.structs, *sh.comp);
+			get_descriptor_sets(descriptorSets, *sh.comp);
 		}
 
 		// re-map potential name collisions
@@ -534,6 +655,11 @@ namespace autoshader {
 			for (auto t : sh.structs) {
 				out += struct_definition(sh, t) + ";\n\n";
 			}
+		}
+
+		for (auto &s : descriptorSets) {
+			out += descriptor_layout(s.second, descriptorSets.size() == 1 ? "DescriptorSet" :
+				fmt::format("DescriptorSet{}", s.first)) + "\n\n";
 		}
 
 		// wrte the output to the intended destination
