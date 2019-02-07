@@ -74,6 +74,7 @@ set(files
   struct-align.cpp
   name-map.cpp
   descriptor-set-layout.cpp
+  vertex-input.cpp
   )
 
 set(shaders
@@ -82,6 +83,7 @@ set(shaders
   name-map.frag
   descriptor-set-layout.vert
   descriptor-set-layout.frag
+  vertex-input.vert
   )
 
 # compile the shaders to spirv

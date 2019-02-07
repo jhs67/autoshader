@@ -376,7 +376,8 @@ namespace autoshader {
 			return;
 		auto type = comp.get_type(b);
 		if (type.basetype != spirv_cross::SPIRType::Struct)
-			throw std::runtime_error(fmt::format("get_dependant_structs called with non struct type {}", type.basetype));
+			throw std::runtime_error(fmt::format(
+				"get_dependant_structs called with non struct type {}", type.basetype));
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
 			uint32_t t = type.member_types[i];
 			auto mtype = comp.get_type(t);
@@ -396,6 +397,105 @@ namespace autoshader {
 			get_dependant_structs(r, comp, v.base_type_id);
 		for (auto &v : res.push_constant_buffers)
 			get_dependant_structs(r, comp, v.base_type_id);
+	}
+
+	string vertex_format_string(spirv_cross::Compiler &comp, uint32_t id) {
+		using spirv_cross::SPIRType;
+		auto type = comp.get_type(id);
+		string ext;
+		int bits;
+		switch (type.basetype) {
+			case SPIRType::Unknown: {
+				throw std::runtime_error("cant' get vertex format of unkown type");
+			}
+			case SPIRType::Char:
+			case SPIRType::Boolean:
+			case SPIRType::Void:
+			case SPIRType::AtomicCounter:
+			case SPIRType::Half:
+			case SPIRType::Struct:
+			case SPIRType::Image:
+			case SPIRType::SampledImage:
+			case SPIRType::Sampler:
+				throw std::runtime_error("invalid type for vertex format");
+			case SPIRType::Int: {
+				ext = "Sint";
+				bits = 32;
+				break;
+			}
+			case SPIRType::UInt: {
+				ext = "Uint";
+				bits = 32;
+				break;
+			}
+			case SPIRType::Int64: {
+				ext = "Sint";
+				bits = 64;
+				break;
+			}
+			case SPIRType::UInt64: {
+				ext = "Uint";
+				bits = 64;
+				break;
+			}
+			case SPIRType::Float: {
+				ext = "Sfloat";
+				bits = 32;
+				break;
+			}
+			case SPIRType::Double: {
+				ext = "Sfloat ";
+				bits = 64;
+				break;
+			}
+		}
+
+		if (ext.empty())
+			throw std::runtime_error("unexpected type for vertex format");
+
+		fmt::memory_buffer r;
+		format_to(r, "vk::Format::e");
+		static constexpr char components[4] = { 'R', 'G', 'B', 'A' };
+		for (uint32_t i = 0; i < type.vecsize && i < 4; ++i) {
+			format_to(r, "{}{}", components[i], bits);
+		}
+		format_to(r, "{}", ext);
+		return to_string(r);
+	}
+
+	string get_vertex_definition(spirv_cross::Compiler &comp, const string &name) {
+		fmt::memory_buffer r;
+		spirv_cross::ShaderResources res = comp.get_shader_resources();
+		if (res.stage_inputs.empty())
+			return string();
+
+		format_to(r, "struct {} {{\n", name);
+		for (auto &v : res.stage_inputs) {
+			auto var = comp.get_type(v.type_id);
+			auto type = comp.get_type(v.base_type_id);
+			format_to(r, "  {} {}", type_string(comp, type), v.name);
+			for (size_t i = var.array.size(); i-- != 0;)
+				format_to(r, "[{}]", var.array[i]);
+			format_to(r, ";\n");
+		}
+		format_to(r, "}};\n\n");
+
+		format_to(r, "auto getVertexBindingDescription() {{\n");
+		format_to(r, "  return std::array<vk::VertexInputBindingDescription, 1>({{{{\n");
+		format_to(r, "    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", name);
+		format_to(r, "  }}}});\n}}\n\n");
+
+		format_to(r, "auto getVertexAttributeDescriptions() {{\n");
+		format_to(r, "  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
+			res.stage_inputs.size());
+		for (auto &v : res.stage_inputs) {
+			format_to(r, "    {{ {}, 0, {}, offsetof({}, {}) }},\n",
+				comp.get_decoration(v.id, spv::DecorationLocation),
+				vertex_format_string(comp, v.base_type_id), name, v.name);
+		}
+		format_to(r, "  }}}});\n}}\n\n");
+
+		return to_string(r);
 	}
 
 	enum struct DescriptorType {
@@ -483,11 +583,15 @@ namespace autoshader {
 		}
 	}
 
-	void get_descriptor_sets(std::map<uint32_t, DescriptorSet> &r, spirv_cross::Compiler &comp) {
+	spv::ExecutionModel get_execution_model(spirv_cross::Compiler &comp) {
 		auto ep = comp.get_entry_points_and_stages();
 		if (ep.empty())
 			throw std::runtime_error("shader stages has no entry point");
-		auto em = ep[0].execution_model;
+		return ep[0].execution_model;
+	}
+
+	void get_descriptor_sets(std::map<uint32_t, DescriptorSet> &r, spirv_cross::Compiler &comp) {
+		auto em = get_execution_model(comp);
 
 		spirv_cross::ShaderResources res = comp.get_shader_resources();
 		get_descriptor_sets(r, comp, em, res.uniform_buffers, DescriptorType::Uniform);
@@ -617,6 +721,9 @@ namespace autoshader {
 		.add_options()
 			("h,help", "print help")
 			("i,input", "input spirv file (stdin if missing)", cxxopts::value<vector<string>>())
+			("v,vertex", "name for generated vertex struct",
+				cxxopts::value<string>()->default_value("Vertex"))
+			("no-vertex", "suppress the generation of vertex structrures")
 			("o,output", "output source file (stdout if missing)", cxxopts::value<string>());
 		opts.parse_positional({ "input" });
 
@@ -654,6 +761,15 @@ namespace autoshader {
 		for (auto &sh : shaders) {
 			for (auto t : sh.structs) {
 				out += struct_definition(sh, t) + ";\n\n";
+			}
+		}
+
+		if (!options["no-vertex"].as<bool>()) {
+			string vertname = options["vertex"].as<string>();
+			for (auto &sh : shaders) {
+				if (get_execution_model(*sh.comp) != spv::ExecutionModelVertex)
+					continue;
+				out += get_vertex_definition(*sh.comp, vertname);
 			}
 		}
 
