@@ -711,8 +711,17 @@ namespace autoshader {
 		}
 	}
 
+	auto path_filename(const char *p) {
+		int s = '/';
+		#ifdef WIN32
+		s = '\\';
+		#endif
+		auto t = strrchr(p, s);
+		return t == nullptr ? p : t;
+	}
+
 	int main(int ac, char *av[]) {
-		auto prog = std::filesystem::path(av[0]).filename();
+		auto prog = path_filename(av[0]);
 		cxxopts::Options opts(prog, "automatic shader reflection to c++");
 
 		opts

@@ -65,7 +65,7 @@ find_package(glm CONFIG REQUIRED)
 
 # link the catch runtime into a library
 add_library(${PROJECT_NAME}-main "main.cpp")
-set_target_properties(${PROJECT_NAME}-main PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+set_target_properties(${PROJECT_NAME}-main PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(${PROJECT_NAME}-main Catch2::Catch2)
 
 add_custom_target(autoshader-test)
@@ -110,7 +110,7 @@ foreach(file ${files})
 
   # create the test executable
   add_executable(${testcase} ${test_files})
-  set_target_properties(${testcase} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  set_target_properties(${testcase} PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(${testcase} PRIVATE ${PROJECT_NAME}-main)
   target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
   target_link_libraries(${testcase} PRIVATE Vulkan::Vulkan)
