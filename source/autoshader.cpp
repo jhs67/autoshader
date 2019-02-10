@@ -332,14 +332,14 @@ namespace autoshader {
 		format_to(r, ";\n");
 	}
 
-	string struct_definition(ShaderRecord &sh, uint32_t t, const string& indent) {
+	void struct_definition(fmt::memory_buffer &r, ShaderRecord &sh, uint32_t t,
+			const string& indent) {
 		using spirv_cross::SPIRType;
 		auto &comp = *sh.comp;
 		SPIRType type = comp.get_type(t);
 		if (type.basetype != SPIRType::Struct)
 			throw std::runtime_error("struct_definition called on non-struct");
 
-		fmt::memory_buffer r;
 		format_to(r, "{}struct {} {{\n", indent, sh.names[t]);
 
 		// keep track of pad variables
@@ -368,8 +368,6 @@ namespace autoshader {
 		add_padding(r, offset, comp.get_declared_struct_size(type), padindex, members, indent);
 
 		format_to(r, "{}}}", indent);
-
-		return to_string(r);
 	}
 
 	void get_dependant_structs(vector<uint32_t> &r, spirv_cross::Compiler &comp, uint32_t b) {
@@ -464,12 +462,11 @@ namespace autoshader {
 		return to_string(r);
 	}
 
-	string get_vertex_definition(spirv_cross::Compiler &comp, const string &name,
-			const string &indent) {
-		fmt::memory_buffer r;
+	void get_vertex_definition(fmt::memory_buffer &r, spirv_cross::Compiler &comp,
+			const string &name, const string &indent) {
 		spirv_cross::ShaderResources res = comp.get_shader_resources();
 		if (res.stage_inputs.empty())
-			return string();
+			return;
 
 		format_to(r, "{}struct {} {{\n", indent, name);
 		for (auto &v : res.stage_inputs) {
@@ -496,8 +493,6 @@ namespace autoshader {
 				vertex_format_string(comp, v.base_type_id), name, v.name);
 		}
 		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
-
-		return to_string(r);
 	}
 
 	enum struct DescriptorType {
@@ -604,9 +599,9 @@ namespace autoshader {
 		get_descriptor_sets(r, comp, em, res.separate_samplers, DescriptorType::Sampler);
 	}
 
-	string descriptor_layout(const DescriptorSet &set, const string &name, const string &indent) {
+	void descriptor_layout(fmt::memory_buffer &r, const DescriptorSet &set,
+			const string &name, const string &indent) {
 		bool c = false;
-		fmt::memory_buffer r;
 		format_to(r, "{}auto get{}LayoutBindings() {{\n", indent, name);
 		format_to(r, "{}  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{", indent,
 			set.descriptors.size());
@@ -619,7 +614,6 @@ namespace autoshader {
 			c = true;
 		}
 		format_to(r, "\n{}  }}}});\n{}}}", indent, indent);
-		return to_string(r);
 	}
 
 	struct StructIndex {
@@ -786,7 +780,8 @@ namespace autoshader {
 
 		for (auto &sh : shaders) {
 			for (auto t : sh.structs) {
-				format_to(r, "{};\n\n", struct_definition(sh, t, indent));
+				struct_definition(r, sh, t, indent);
+				format_to(r, ";\n\n");
 			}
 		}
 
@@ -795,14 +790,14 @@ namespace autoshader {
 			for (auto &sh : shaders) {
 				if (get_execution_model(*sh.comp) != spv::ExecutionModelVertex)
 					continue;
-				format_to(r, "{}", get_vertex_definition(*sh.comp, vertname, indent));
+				get_vertex_definition(r, *sh.comp, vertname, indent);
 			}
 		}
 
 		for (auto &s : descriptorSets) {
-			format_to(r, "{}\n", descriptor_layout(s.second,
-				descriptorSets.size() == 1 ? "DescriptorSet" :
-					fmt::format("DescriptorSet{}", s.first), indent));
+			descriptor_layout(r, s.second, descriptorSets.size() == 1 ? "DescriptorSet" :
+				fmt::format("DescriptorSet{}", s.first), indent);
+			format_to(r, "\n");
 		}
 
 		if (!namespaces.empty()) {
