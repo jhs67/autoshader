@@ -23,6 +23,15 @@ find_package(cxxopts CONFIG REQUIRED)
 
 set(sources
 	source/autoshader.cpp
+	source/autoshader.h
+	source/descriptorset.cpp
+	source/descriptorset.h
+	source/namemap.cpp
+	source/namemap.h
+	source/typereflect.cpp
+	source/typereflect.h
+	source/vertexinput.cpp
+	source/vertexinput.h
 	)
 
 add_executable(${PROJECT_NAME} ${sources})
