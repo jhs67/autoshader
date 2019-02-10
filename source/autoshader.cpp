@@ -323,16 +323,16 @@ namespace autoshader {
 	}
 
 	void add_padding(fmt::memory_buffer &r, size_t &offset, size_t target,
-			int &index, std::set<string> &members) {
+			int &index, std::set<string> &members, const string& indent) {
 		if (offset >= target)
 			return;
-		format_to(r, "  float {}", get_pad_name(index, members));
+		format_to(r, "{}  float {}", indent, get_pad_name(index, members));
 		while ((offset += 4) < target)
 			format_to(r, ", {}", get_pad_name(index, members));
 		format_to(r, ";\n");
 	}
 
-	string struct_definition(ShaderRecord &sh, uint32_t t) {
+	string struct_definition(ShaderRecord &sh, uint32_t t, const string& indent) {
 		using spirv_cross::SPIRType;
 		auto &comp = *sh.comp;
 		SPIRType type = comp.get_type(t);
@@ -340,7 +340,7 @@ namespace autoshader {
 			throw std::runtime_error("struct_definition called on non-struct");
 
 		fmt::memory_buffer r;
-		format_to(r, "struct {} {{\n", sh.names[t]);
+		format_to(r, "{}struct {} {{\n", indent, sh.names[t]);
 
 		// keep track of pad variables
 		int padindex = 0;
@@ -351,9 +351,10 @@ namespace autoshader {
 		size_t offset = 0;
 		for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
 			// Add padding to bring to the declared offset
-			add_padding(r, offset, comp.type_struct_member_offset(type, i), padindex, members);
+			add_padding(r, offset, comp.type_struct_member_offset(type, i), padindex,
+				members, indent);
 
-			format_to(r, "  ");
+			format_to(r, "{}  ", indent);
 
 			// add the member declaration
 			auto csize = declare_member(r, sh, t, i);
@@ -364,9 +365,9 @@ namespace autoshader {
 		}
 
 		// pad up to the declared structure size (can this happen?)
-		add_padding(r, offset, comp.get_declared_struct_size(type), padindex, members);
+		add_padding(r, offset, comp.get_declared_struct_size(type), padindex, members, indent);
 
-		format_to(r, "}}");
+		format_to(r, "{}}}", indent);
 
 		return to_string(r);
 	}
@@ -463,37 +464,38 @@ namespace autoshader {
 		return to_string(r);
 	}
 
-	string get_vertex_definition(spirv_cross::Compiler &comp, const string &name) {
+	string get_vertex_definition(spirv_cross::Compiler &comp, const string &name,
+			const string &indent) {
 		fmt::memory_buffer r;
 		spirv_cross::ShaderResources res = comp.get_shader_resources();
 		if (res.stage_inputs.empty())
 			return string();
 
-		format_to(r, "struct {} {{\n", name);
+		format_to(r, "{}struct {} {{\n", indent, name);
 		for (auto &v : res.stage_inputs) {
 			auto var = comp.get_type(v.type_id);
 			auto type = comp.get_type(v.base_type_id);
-			format_to(r, "  {} {}", type_string(comp, type), v.name);
+			format_to(r, "{}  {} {}", indent, type_string(comp, type), v.name);
 			for (size_t i = var.array.size(); i-- != 0;)
 				format_to(r, "[{}]", var.array[i]);
 			format_to(r, ";\n");
 		}
-		format_to(r, "}};\n\n");
+		format_to(r, "{}}};\n\n", indent);
 
-		format_to(r, "auto getVertexBindingDescription() {{\n");
-		format_to(r, "  return std::array<vk::VertexInputBindingDescription, 1>({{{{\n");
-		format_to(r, "    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", name);
-		format_to(r, "  }}}});\n}}\n\n");
+		format_to(r, "{}auto getVertexBindingDescription() {{\n", indent);
+		format_to(r, "{}  return std::array<vk::VertexInputBindingDescription, 1>({{{{\n", indent);
+		format_to(r, "{}    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", indent, name);
+		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
 
-		format_to(r, "auto getVertexAttributeDescriptions() {{\n");
-		format_to(r, "  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
-			res.stage_inputs.size());
+		format_to(r, "{}auto getVertexAttributeDescriptions() {{\n", indent);
+		format_to(r, "{}  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
+			indent, res.stage_inputs.size());
 		for (auto &v : res.stage_inputs) {
-			format_to(r, "    {{ {}, 0, {}, offsetof({}, {}) }},\n",
+			format_to(r, "{}    {{ {}, 0, {}, offsetof({}, {}) }},\n", indent,
 				comp.get_decoration(v.id, spv::DecorationLocation),
 				vertex_format_string(comp, v.base_type_id), name, v.name);
 		}
-		format_to(r, "  }}}});\n}}\n\n");
+		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
 
 		return to_string(r);
 	}
@@ -602,21 +604,21 @@ namespace autoshader {
 		get_descriptor_sets(r, comp, em, res.separate_samplers, DescriptorType::Sampler);
 	}
 
-	string descriptor_layout(const DescriptorSet &set, const string &name) {
+	string descriptor_layout(const DescriptorSet &set, const string &name, const string &indent) {
 		bool c = false;
 		fmt::memory_buffer r;
-		format_to(r, "auto get{}LayoutBindings() {{\n", name);
-		format_to(r, "  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{",
+		format_to(r, "{}auto get{}LayoutBindings() {{\n", indent, name);
+		format_to(r, "{}  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{", indent,
 			set.descriptors.size());
 		for (auto &d : set.descriptors) {
 			format_to(r, c ? ",\n" : "\n");
-			format_to(r, "    {{ {}, {}, {}, ", d.first,
+			format_to(r, "{}    {{ {}, {}, {}, ", indent, d.first,
 				vulkan_descriptor_type(d.second.type), d.second.arraysize);
 			vulkan_stage_flags(r, d.second.stages);
 			format_to(r, " }}");
 			c = true;
 		}
-		format_to(r, "\n  }}}});\n}}");
+		format_to(r, "\n{}  }}}});\n{}}}", indent, indent);
 		return to_string(r);
 	}
 
@@ -717,7 +719,7 @@ namespace autoshader {
 		s = '\\';
 		#endif
 		auto t = strrchr(p, s);
-		return t == nullptr ? p : t;
+		return t == nullptr ? p : t + 1;
 	}
 
 	int main(int ac, char *av[]) {
@@ -732,7 +734,8 @@ namespace autoshader {
 			("i,input", "input spirv file (stdin if missing)", cxxopts::value<vector<string>>())
 			("v,vertex", "name for generated vertex struct",
 				cxxopts::value<string>()->default_value("Vertex"))
-			("no-vertex", "suppress the generation of vertex structrures")
+			("no-vertex", "suppress the generation of vertex structures")
+			("namespace", "enclose the output in a namespace", cxxopts::value<vector<string>>())
 			("o,output", "output source file (stdout if missing)", cxxopts::value<string>());
 		opts.parse_positional({ "input" });
 
@@ -766,10 +769,24 @@ namespace autoshader {
 		map_struct_names(shaders);
 
 		// Generate the output
-		string out = "\n";
+		fmt::memory_buffer r;
+		format_to(r, "// generated with {}\n\n", prog);
+
+		// figure out the namespace
+		vector<string> namespaces;
+		if (options.count("namespace") != 0)
+			namespaces = options["namespace"].as<vector<string>>();
+		auto indent = namespaces.empty() ? string() : "  ";
+
+		if (!namespaces.empty()) {
+			for (size_t i = 0; i < namespaces.size(); ++i)
+				format_to(r, "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
+			format_to(r, "\n\n");
+		}
+
 		for (auto &sh : shaders) {
 			for (auto t : sh.structs) {
-				out += struct_definition(sh, t) + ";\n\n";
+				format_to(r, "{};\n\n", struct_definition(sh, t, indent));
 			}
 		}
 
@@ -778,16 +795,24 @@ namespace autoshader {
 			for (auto &sh : shaders) {
 				if (get_execution_model(*sh.comp) != spv::ExecutionModelVertex)
 					continue;
-				out += get_vertex_definition(*sh.comp, vertname);
+				format_to(r, "{}", get_vertex_definition(*sh.comp, vertname, indent));
 			}
 		}
 
 		for (auto &s : descriptorSets) {
-			out += descriptor_layout(s.second, descriptorSets.size() == 1 ? "DescriptorSet" :
-				fmt::format("DescriptorSet{}", s.first)) + "\n\n";
+			format_to(r, "{}\n", descriptor_layout(s.second,
+				descriptorSets.size() == 1 ? "DescriptorSet" :
+					fmt::format("DescriptorSet{}", s.first), indent));
+		}
+
+		if (!namespaces.empty()) {
+			for (size_t i = 0; i < namespaces.size(); ++i)
+				format_to(r, "{}}}", i == 0 ? "\n" : " ");
+			format_to(r, "\n");
 		}
 
 		// wrte the output to the intended destination
+		string out = to_string(r);
 		if (options.count("output") == 0) {
 			std::cout.write(out.data(), out.size());
 		}
