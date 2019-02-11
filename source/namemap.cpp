@@ -6,6 +6,7 @@
 //
 
 #include "namemap.h"
+#include "shadersource.h"
 #include <set>
 
 namespace autoshader {
@@ -50,25 +51,6 @@ namespace autoshader {
 			}
 		}
 
-		//------------------------------------------------------------------------------------------
-		//-- return the postifix based on the shader stage
-
-		string get_shader_postfix(spirv_cross::Compiler &comp) {
-			auto ep = comp.get_entry_points_and_stages();
-			if (ep.empty())
-				throw std::runtime_error("shader stages has no entry point");
-			switch (ep[0].execution_model) {
-				case spv::ExecutionModelVertex: return "_vert";
-				case spv::ExecutionModelTessellationControl: return "_tesc";
-				case spv::ExecutionModelTessellationEvaluation: return "_tese";
-				case spv::ExecutionModelGeometry: return "_geom";
-				case spv::ExecutionModelFragment: return "_frag";
-				case spv::ExecutionModelGLCompute: return "_comp";
-				case spv::ExecutionModelKernel: return "_krnl";
-				case spv::ExecutionModelMax: break;
-			}
-			throw std::runtime_error("invalid shader execution model");
-		}
 
 		//------------------------------------------------------------------------------------------
 		//-- return the signature string for a type
@@ -166,7 +148,7 @@ namespace autoshader {
 			assign_struct_names(sh, globals, sigs, string());
 			for (size_t i = 0; i < locals.size(); ++i) {
 				assign_struct_names(sh, locals[i], sigs, notempty == 1 ? string() :
-					get_shader_postfix(*sh[i].comp));
+					"_" + get_execution_string(*sh[i].comp));
 			}
 		}
 	}

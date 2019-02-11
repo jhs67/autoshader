@@ -16,6 +16,7 @@ namespace autoshader {
 
 	struct ShaderRecord {
 		std::unique_ptr<spirv_cross::Compiler> comp;
+		vector<uint32_t> source;
 		vector<uint32_t> structs;
 		std::map<uint32_t, string> names;
 	};

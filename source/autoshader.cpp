@@ -6,6 +6,7 @@
 //
 
 #include "autoshader.h"
+#include "shadersource.h"
 #include "descriptorset.h"
 #include "typereflect.h"
 #include "vertexinput.h"
@@ -95,6 +96,7 @@ namespace autoshader {
 			("v,vertex", "name for generated vertex struct",
 				cxxopts::value<string>()->default_value("Vertex"))
 			("no-vertex", "suppress the generation of vertex structures")
+			("no-source", "suppress the generation of static shader data variables")
 			("namespace", "enclose the output in a namespace", cxxopts::value<vector<string>>())
 			("o,output", "output source file (stdout if missing)", cxxopts::value<string>());
 		opts.parse_positional({ "input" });
@@ -113,14 +115,16 @@ namespace autoshader {
 		if (input.empty()) {
 			shaders.emplace_back();
 			auto &sh = shaders.back();
-			sh.comp.reset(new spirv_cross::Compiler(load_spirv("stdin", std::cin)));
+			sh.source = load_spirv("stdin", std::cin);
+			sh.comp.reset(new spirv_cross::Compiler(sh.source));
 			find_buffer_structs(sh.structs, *sh.comp);
 			get_descriptor_sets(descriptorSets, *sh.comp);
 		}
 		for (auto i : input) {
 			shaders.emplace_back();
 			auto &sh = shaders.back();
-			sh.comp.reset(new spirv_cross::Compiler(load_spirv(i)));
+			sh.source = load_spirv(i);
+			sh.comp.reset(new spirv_cross::Compiler(sh.source));
 			find_buffer_structs(sh.structs, *sh.comp);
 			get_descriptor_sets(descriptorSets, *sh.comp);
 		}
@@ -164,6 +168,11 @@ namespace autoshader {
 			descriptor_layout(r, s.second, descriptorSets.size() == 1 ? "DescriptorSet" :
 				fmt::format("DescriptorSet{}", s.first), indent);
 			format_to(r, "\n");
+		}
+
+		if (!options["no-source"].as<bool>()) {
+			shader_source_decl(r, shaders, indent);
+			shader_source(r, shaders, indent);
 		}
 
 		if (!namespaces.empty()) {
