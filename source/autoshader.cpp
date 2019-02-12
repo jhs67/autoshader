@@ -82,7 +82,23 @@ namespace autoshader {
 			return t == nullptr ? p : t + 1;
 		}
 
+		bool is_file_match(const string &name, const string &data) {
+			std::ifstream str(name);
+			str.seekg(0, str.end);
+			size_t l = str.tellg();
+			if (l != data.size())
+				return false;
+			str.seekg(0, str.beg);
+			vector<char> t(l);
+			str.read(t.data(), t.size());
+			if (!str.good())
+				return false;
+			return std::equal(t.begin(), t.end(), data.begin());
+		}
+
 		void write_file(const string &name, const string &data) {
+			if (is_file_match(name, data))
+				return;
 			std::ofstream str(name);
 			str.write(data.data(), data.size());
 			if (!str.good())
