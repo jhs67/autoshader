@@ -75,6 +75,7 @@ set(files
   name-map.cpp
   descriptor-set-layout.cpp
   vertex-input.cpp
+  any-arg.cpp
   )
 
 set(shaders
@@ -112,6 +113,7 @@ foreach(file ${files})
   add_executable(${testcase} ${test_files})
   set_target_properties(${testcase} PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(${testcase} PRIVATE ${PROJECT_NAME}-main)
+  target_link_libraries(${testcase} PRIVATE autoshader-lib)
   target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
   target_link_libraries(${testcase} PRIVATE Vulkan::Vulkan)
   target_link_libraries(${testcase} PRIVATE glm)

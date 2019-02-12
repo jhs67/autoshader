@@ -49,6 +49,9 @@ if( AUTOSHADER_WarnAsError AND NOT MSVC )
 	set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 endif()
 
+add_library(${PROJECT_NAME}-lib INTERFACE)
+target_include_directories(${PROJECT_NAME}-lib INTERFACE include)
+
 include(CTest)
 
 if(BUILD_TESTING AND AUTOSHADER_BuildTests)

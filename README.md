@@ -4,6 +4,18 @@ autoshader
 This aims to be a tool to automate some of the tasks needed to use vulkan
 shaders from c++ code.
 
+There are two facets to the autoshader package. The first is a tool that
+analysis compiled spirv code to create a c++ reflection of the pipeline
+interface. This includes reflection of the structure types used in uniform and
+storage buffers and also information about the sets and bindings used for
+uniform and storage variables. Information about vertex input locations and
+types can also be reflected for graphics pipelines.
+
+The second is a header only library that uses the reflected interface
+information to create interfaces you can use to create and interact with
+the pipeline.
+
+
 Type reflection
 ---------------
 
