@@ -47,11 +47,13 @@ namespace autoshader {
 	//------------------------------------------------------------------------------------------
 	//-- format the shader source into the buffer
 
-	void shader_source(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent) {
-		format_to(r, "\n#ifdef AUTOSHADER_SOURCE_DATA\n\n");
+	void shader_source(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent,
+			bool ifdef) {
+		if (ifdef)
+			format_to(r, "\n#ifdef AUTOSHADER_SOURCE_DATA\n");
 		for (auto &s : sh) {
 			auto p = get_execution_string(*s.comp);
-			format_to(r, "{}extern const uint32_t {}_size = {}\n", indent, p,
+			format_to(r, "\n{}extern const uint32_t {}_size = {};\n", indent, p,
 				sizeof(uint32_t) * s.source.size());
 			format_to(r, "{}extern const uint32_t {}_data[] = {{\n", indent, p);
 			for (size_t i = 0; i < s.source.size();) {
@@ -61,9 +63,10 @@ namespace autoshader {
 				}
 				format_to(r, "\n");
 			}
-			format_to(r, "{}}};\n\n", indent);
+			format_to(r, "{}}};\n", indent);
 		}
-		format_to(r, "#endif // AUTOSHADER_SOURCE_DATA\n");
+		if (ifdef)
+			format_to(r, "\n#endif // AUTOSHADER_SOURCE_DATA\n");
 	}
 
 } // namespace autoshader

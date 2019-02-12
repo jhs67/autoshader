@@ -22,7 +22,8 @@ namespace autoshader {
 
 	//------------------------------------------------------------------------------------------
 	//-- format the shader source into the buffer
-	void shader_source(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent);
+	void shader_source(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent,
+		bool ifdef);
 
 } // namespace autoshader
 

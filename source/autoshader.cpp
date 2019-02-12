@@ -82,6 +82,13 @@ namespace autoshader {
 			return t == nullptr ? p : t + 1;
 		}
 
+		void write_file(const string &name, const string &data) {
+			std::ofstream str(name);
+			str.write(data.data(), data.size());
+			if (!str.good())
+				throw std::runtime_error("error writing output to: " + name);
+		}
+
 	} // namespace
 
 	int main(int ac, char *av[]) {
@@ -99,6 +106,7 @@ namespace autoshader {
 			("no-vertex", "suppress the generation of vertex structures")
 			("no-source", "suppress the generation of static shader data variables")
 			("namespace", "enclose the output in a namespace", cxxopts::value<vector<string>>())
+			("d,data", "output shader data to a separate file", cxxopts::value<string>())
 			("o,output", "output source file (stdout if missing)", cxxopts::value<string>());
 		opts.parse_positional({ "input" });
 
@@ -135,6 +143,7 @@ namespace autoshader {
 
 		// Generate the output
 		fmt::memory_buffer r;
+		fmt::memory_buffer dr;
 		format_to(r, "// generated with {}\n\n", prog);
 
 		// figure out the namespace
@@ -147,6 +156,12 @@ namespace autoshader {
 			for (size_t i = 0; i < namespaces.size(); ++i)
 				format_to(r, "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
 			format_to(r, "\n\n");
+
+			if (options.count("data")) {
+				for (size_t i = 0; i < namespaces.size(); ++i)
+					format_to(dr, "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
+				format_to(dr, "\n\n");
+			}
 		}
 
 		for (auto &sh : shaders) {
@@ -176,26 +191,36 @@ namespace autoshader {
 
 			generate_components(r, descriptorSets, shaders, indent);
 
-			shader_source(r, shaders, indent);
+			if (options.count("data") != 0)
+				shader_source(dr, shaders, indent, false);
+			else
+				shader_source(r, shaders, indent, true);
 		}
 
 		if (!namespaces.empty()) {
 			for (size_t i = 0; i < namespaces.size(); ++i)
 				format_to(r, "{}}}", i == 0 ? "\n" : " ");
 			format_to(r, "\n");
+
+			if (options.count("data")) {
+				for (size_t i = 0; i < namespaces.size(); ++i)
+					format_to(dr, "{}}}", i == 0 ? "\n" : " ");
+				format_to(dr, "\n");
+			}
 		}
 
 		// wrte the output to the intended destination
 		string out = to_string(r);
+		string dout = to_string(dr);
 		if (options.count("output") == 0) {
 			std::cout.write(out.data(), out.size());
 		}
 		else {
-			auto outname = options["output"].as<string>();
-			std::ofstream str(outname);
-			str.write(out.data(), out.size());
-			if (!str.good())
-				throw std::runtime_error("error writing output to: " + outname);
+			write_file(options["output"].as<string>(), out);
+		}
+
+		if (options.count("data")) {
+			write_file(options["data"].as<string>(), dout);
 		}
 
 		return 0;
