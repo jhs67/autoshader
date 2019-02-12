@@ -24,6 +24,8 @@ find_package(cxxopts CONFIG REQUIRED)
 set(sources
 	source/autoshader.cpp
 	source/autoshader.h
+	source/component.cpp
+	source/component.h
 	source/descriptorset.cpp
 	source/descriptorset.h
 	source/namemap.cpp

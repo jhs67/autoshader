@@ -10,6 +10,7 @@
 #include "descriptorset.h"
 #include "typereflect.h"
 #include "vertexinput.h"
+#include "component.h"
 #include "namemap.h"
 #include <cxxopts.hpp>
 #include <iostream>
@@ -172,6 +173,9 @@ namespace autoshader {
 
 		if (!options["no-source"].as<bool>()) {
 			shader_source_decl(r, shaders, indent);
+
+			generate_components(r, descriptorSets, shaders, indent);
+
 			shader_source(r, shaders, indent);
 		}
 
