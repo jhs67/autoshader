@@ -13,6 +13,7 @@ endif()
 # Options
 option(AUTOSHADER_BuildTests "Build the unit tests when BUILD_TESTING is enabled." ON)
 option(AUTOSHADER_WarnAsError "Build the tests with warnings as errors." ON)
+option(AUTOSHADER_VulkanTests "Build the unit tests that need a vulkan device to run." ON)
 
 project(autoshader)
 

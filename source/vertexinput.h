@@ -13,7 +13,7 @@
 
 namespace autoshader {
 
-	void get_vertex_definition(fmt::memory_buffer &r, spirv_cross::Compiler &comp,
+	bool get_vertex_definition(fmt::memory_buffer &r, spirv_cross::Compiler &comp,
 			const string &name, const string &indent);
 
 } // namespace autoshader

@@ -139,4 +139,23 @@ namespace autoshader {
 		format_to(r, "\n{}  }}}});\n{}}}", indent, indent);
 	}
 
+
+	//-------------------------------------------------------------------------------------------
+	// return the stage flags for the first entry point
+
+	string get_shader_stage_flags(spirv_cross::Compiler &comp) {
+		return vulkan_stage_string(get_execution_model(comp));
+	}
+
+
+	//-------------------------------------------------------------------------------------------
+	// return the execution model for the shaders first entry point
+
+	string get_first_entry_point_name(spirv_cross::Compiler &comp) {
+		auto ep = comp.get_entry_points_and_stages();
+		if (ep.empty())
+			throw std::runtime_error("shader stages has no entry point");
+		return ep[0].name;
+	}
+
 } // namespace autoshader

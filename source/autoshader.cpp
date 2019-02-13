@@ -187,12 +187,13 @@ namespace autoshader {
 			}
 		}
 
+		bool withVertex = false;
 		if (!options["no-vertex"].as<bool>()) {
 			string vertname = options["vertex"].as<string>();
 			for (auto &sh : shaders) {
 				if (get_execution_model(*sh.comp) != spv::ExecutionModelVertex)
 					continue;
-				get_vertex_definition(r, *sh.comp, vertname, indent);
+				withVertex = get_vertex_definition(r, *sh.comp, vertname, indent);
 			}
 		}
 
@@ -205,7 +206,7 @@ namespace autoshader {
 		if (!options["no-source"].as<bool>()) {
 			shader_source_decl(r, shaders, indent);
 
-			generate_components(r, descriptorSets, shaders, indent);
+			generate_components(r, descriptorSets, shaders, withVertex, indent);
 
 			if (options.count("data") != 0)
 				shader_source(dr, shaders, indent, false);

@@ -37,6 +37,18 @@ namespace autoshader {
 
 
 	//-------------------------------------------------------------------------------------------
+	// return the stage flags for the first entry point
+
+	string get_shader_stage_flags(spirv_cross::Compiler &comp);
+
+
+	//-------------------------------------------------------------------------------------------
+	// return the execution model for the shaders first entry point
+
+	string get_first_entry_point_name(spirv_cross::Compiler &comp);
+
+
+	//-------------------------------------------------------------------------------------------
 	// return the execution model for the shaders first entry point
 
 	spv::ExecutionModel get_execution_model(spirv_cross::Compiler &comp);

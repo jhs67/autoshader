@@ -85,11 +85,11 @@ namespace autoshader {
 	//------------------------------------------------------------------------------------------
 	// format a default vertex definition into the buffer
 
-	void get_vertex_definition(fmt::memory_buffer &r, spirv_cross::Compiler &comp,
+	bool get_vertex_definition(fmt::memory_buffer &r, spirv_cross::Compiler &comp,
 			const string &name, const string &indent) {
 		spirv_cross::ShaderResources res = comp.get_shader_resources();
 		if (res.stage_inputs.empty())
-			return;
+			return false;
 
 		format_to(r, "{}struct {} {{\n", indent, name);
 		for (auto &v : res.stage_inputs) {
@@ -116,6 +116,7 @@ namespace autoshader {
 				vertex_format_string(comp, v.base_type_id), name, v.name);
 		}
 		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
+		return true;
 	}
 
 } // namespace autoshader

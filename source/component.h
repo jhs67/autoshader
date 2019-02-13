@@ -16,7 +16,8 @@ namespace autoshader {
 	//-- generate the shader component structure
 
 	void generate_components(fmt::memory_buffer &r,
-		std::map<uint32_t, DescriptorSet> &sets, vector<ShaderRecord> &sh, const string &indent);
+		std::map<uint32_t, DescriptorSet> &sets, vector<ShaderRecord> &sh, bool withVertex,
+		const string &indent);
 
 } // namespace autoshader
 

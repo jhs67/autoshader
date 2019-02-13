@@ -78,6 +78,12 @@ set(files
   any-arg.cpp
   )
 
+if(AUTOSHADER_VulkanTests)
+  list(APPEND files
+  create-pipe.cpp
+    )
+endif()
+
 set(shaders
   struct-align.comp
   name-map.vert
@@ -85,6 +91,8 @@ set(shaders
   descriptor-set-layout.vert
   descriptor-set-layout.frag
   vertex-input.vert
+  create-pipe.vert
+  create-pipe.frag
   )
 
 # compile the shaders to spirv

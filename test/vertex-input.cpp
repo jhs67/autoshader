@@ -8,6 +8,7 @@
 #include "catch.hpp"
 #include "glm/glm.hpp"
 #include "vulkan/vulkan.hpp"
+#include "autoshader/createpipe.h"
 
 namespace shader {
 
