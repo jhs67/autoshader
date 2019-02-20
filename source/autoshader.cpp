@@ -10,6 +10,7 @@
 #include "descriptorset.h"
 #include "typereflect.h"
 #include "vertexinput.h"
+#include "pushranges.h"
 #include "component.h"
 #include "namemap.h"
 #include <cxxopts.hpp>
@@ -200,13 +201,14 @@ namespace autoshader {
 		for (auto &s : descriptorSets) {
 			descriptor_layout(r, s.second, descriptorSets.size() == 1 ? "DescriptorSet" :
 				fmt::format("DescriptorSet{}", s.first), indent);
-			format_to(r, "\n");
 		}
+
+		bool withPush = push_ranges(r, shaders, indent);
 
 		if (!options["no-source"].as<bool>()) {
 			shader_source_decl(r, shaders, indent);
 
-			generate_components(r, descriptorSets, shaders, withVertex, indent);
+			generate_components(r, descriptorSets, shaders, withVertex, withPush, indent);
 
 			if (options.count("data") != 0)
 				shader_source(dr, shaders, indent, false);
@@ -216,12 +218,12 @@ namespace autoshader {
 
 		if (!namespaces.empty()) {
 			for (size_t i = 0; i < namespaces.size(); ++i)
-				format_to(r, "{}}}", i == 0 ? "\n" : " ");
+				format_to(r, "{}}}", i == 0 ? "" : " ");
 			format_to(r, "\n");
 
 			if (options.count("data")) {
 				for (size_t i = 0; i < namespaces.size(); ++i)
-					format_to(dr, "{}}}", i == 0 ? "\n" : " ");
+					format_to(dr, "{}}}", i == 0 ? "" : " ");
 				format_to(dr, "\n");
 			}
 		}

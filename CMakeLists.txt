@@ -31,6 +31,8 @@ set(sources
 	source/descriptorset.h
 	source/namemap.cpp
 	source/namemap.h
+	source/pushranges.cpp
+	source/pushranges.h
 	source/shadersource.cpp
 	source/shadersource.h
 	source/typereflect.cpp

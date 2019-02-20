@@ -49,19 +49,6 @@ namespace autoshader {
 			throw std::runtime_error("unsupported execution model for shader");
 		}
 
-		//-------------------------------------------------------------------------------------------
-		// return the combination of stage flags
-
-		void vulkan_stage_flags(fmt::memory_buffer &r, std::set<spv::ExecutionModel> const& stages) {
-			bool s = false;
-			for (auto e : stages) {
-				if (s)
-					format_to(r, " | ");
-				format_to(r, "{}", vulkan_stage_string(e));
-				s = true;
-			}
-		}
-
 
 		//-------------------------------------------------------------------------------------------
 		// get descriptor sets for the given resource type
@@ -91,6 +78,20 @@ namespace autoshader {
 		}
 
 	} // namespace
+
+
+	//-------------------------------------------------------------------------------------------
+	// return the combination of stage flags
+
+	void vulkan_stage_flags(fmt::memory_buffer &r, std::set<spv::ExecutionModel> const& stages) {
+		bool s = false;
+		for (auto e : stages) {
+			if (s)
+				format_to(r, " | ");
+			format_to(r, "{}", vulkan_stage_string(e));
+			s = true;
+		}
+	}
 
 
 	//-------------------------------------------------------------------------------------------
@@ -136,7 +137,7 @@ namespace autoshader {
 			format_to(r, " }}");
 			c = true;
 		}
-		format_to(r, "\n{}  }}}});\n{}}}", indent, indent);
+		format_to(r, "\n{}  }}}});\n{}}}\n\n", indent, indent);
 	}
 
 

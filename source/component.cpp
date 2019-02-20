@@ -12,9 +12,9 @@ namespace autoshader {
 
 	void generate_components(fmt::memory_buffer &r,
 		std::map<uint32_t, DescriptorSet> &sets, vector<ShaderRecord> &sh,
-		bool withVertex, const string &indent) {
+		bool withVertex, bool withPush, const string &indent) {
 
-		format_to(r, "\n{}struct Components {{\n", indent);
+		format_to(r, "{}struct Components {{\n", indent);
 		format_to(r, "{}  Components() {{}}\n", indent);
 		format_to(r, "{}  Components(Components &&o) noexcept {{ swap(o); }}\n", indent);
 		format_to(r, "{}  Components &operator = (Components &&o) noexcept {{ swap(o); return *this; }}\n", indent);
@@ -26,6 +26,9 @@ namespace autoshader {
 			format_to(r, "{0}    auto lb{1} = getDescriptorSet{1}LayoutBindings();\n", indent, sn);
 			format_to(r, "{0}    auto slb{1} = d.createDescriptorSetLayoutUnique({{ {{}}, uint32_t(lb{1}.size()), lb{1}.data() }});\n", indent, sn);
 		}
+		if (withPush) {
+			format_to(r, "{0}    auto pr = getPushConstantRanges();\n", indent);
+		}
 		if (!sets.empty()) {
 			format_to(r, "{}    auto l = std::array<vk::DescriptorSetLayout,{}>({{{{", indent, sets.size());
 			for (auto &s : sets) {
@@ -33,10 +36,20 @@ namespace autoshader {
 				format_to(r, " *slb{}{}", sn, s.first == (sets.end()--)->first ? "" : ",");
 			}
 			format_to(r, " }}}});\n", indent, sets.size());
-			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{ {{}}, {}, l.data() }});\n", indent, sets.size());
+			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{ {{}}, {}, l.data()",
+				indent, sets.size());
+			if (withPush) {
+				format_to(r, ", pr.size(), pr.data() }});\n");
+			}
+			else {
+				format_to(r, " }});\n");
+			}
+		}
+		else if (withPush) {
+			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{ {{}}, 0, nullptr, pr.size(), pr.data() }});\n", indent);
 		}
 		else {
-			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{}});\n", indent, sets.size());
+			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{}});\n", indent);
 		}
 		for (auto &s : sh) {
 			auto sn = get_execution_string(*s.comp);
@@ -110,7 +123,7 @@ namespace autoshader {
 			auto sn = get_execution_string(*sh[i].comp);
 			format_to(r, "{0}  vk::ShaderModule {1};\n", indent, sn);
 		}
-		format_to(r, "{}}};\n", indent);
+		format_to(r, "{}}};\n\n", indent);
 	}
 
 

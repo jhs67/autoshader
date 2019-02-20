@@ -43,6 +43,12 @@ namespace autoshader {
 
 
 	//-------------------------------------------------------------------------------------------
+	// return the combination of stage flags
+
+	void vulkan_stage_flags(fmt::memory_buffer &r, std::set<spv::ExecutionModel> const& stages);
+
+
+	//-------------------------------------------------------------------------------------------
 	// return the execution model for the shaders first entry point
 
 	string get_first_entry_point_name(spirv_cross::Compiler &comp);
