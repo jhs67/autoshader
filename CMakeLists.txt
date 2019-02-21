@@ -29,6 +29,8 @@ set(sources
 	source/component.h
 	source/descriptorset.cpp
 	source/descriptorset.h
+	source/descriptorwrite.cpp
+	source/descriptorwrite.h
 	source/namemap.cpp
 	source/namemap.h
 	source/pushranges.cpp

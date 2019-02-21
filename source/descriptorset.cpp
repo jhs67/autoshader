@@ -11,21 +11,6 @@ namespace autoshader {
 
 	namespace {
 
-		//-------------------------------------------------------------------------------------------
-		// return the vulkan type for a descriptor resource
-
-		const char *vulkan_descriptor_type(DescriptorType type) {
-			switch (type) {
-				case DescriptorType::Sampler: return "vk::DescriptorType::eSampler";
-				case DescriptorType::ImageSampler: return "vk::DescriptorType::eCombinedImageSampler";
-				case DescriptorType::SampledImage: return "vk::DescriptorType::eSampledImage";
-				case DescriptorType::StorageImage: return "vk::DescriptorType::eStorageImage";
-				case DescriptorType::Uniform: return "vk::DescriptorType::eUniformBuffer";
-				case DescriptorType::StorageBuffer: return "vk::DescriptorType::eStorageBuffer";
-			}
-			throw std::runtime_error("internal error: invalid descriptor type");
-		}
-
 
 		//-------------------------------------------------------------------------------------------
 		// return the stage flag for the given shader
@@ -74,10 +59,28 @@ namespace autoshader {
 					throw std::runtime_error(fmt::format(
 						"array size mismatch for descriptor(set={} binding={})", set, bin));
 				t.first->second.stages.insert(em);
+				if (t.first->second.name.empty())
+					t.first->second.name = v.name;
 			}
 		}
 
 	} // namespace
+
+
+	//-------------------------------------------------------------------------------------------
+	// return the vulkan type for a descriptor resource
+
+	const char *vulkan_descriptor_type(DescriptorType type) {
+		switch (type) {
+			case DescriptorType::Sampler: return "vk::DescriptorType::eSampler";
+			case DescriptorType::ImageSampler: return "vk::DescriptorType::eCombinedImageSampler";
+			case DescriptorType::SampledImage: return "vk::DescriptorType::eSampledImage";
+			case DescriptorType::StorageImage: return "vk::DescriptorType::eStorageImage";
+			case DescriptorType::Uniform: return "vk::DescriptorType::eUniformBuffer";
+			case DescriptorType::StorageBuffer: return "vk::DescriptorType::eStorageBuffer";
+		}
+		throw std::runtime_error("internal error: invalid descriptor type");
+	}
 
 
 	//-------------------------------------------------------------------------------------------

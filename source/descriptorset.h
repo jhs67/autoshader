@@ -29,11 +29,19 @@ namespace autoshader {
 		DescriptorType type;
 		spv::Dim imagedim;
 		int arraysize;
+		string name;
 	};
 
 	struct DescriptorSet {
 		std::map<uint32_t, DescriptorRecord> descriptors;
 	};
+
+
+
+	//-------------------------------------------------------------------------------------------
+	// return the vk::Descriptor type
+
+	const char *vulkan_descriptor_type(DescriptorType type);
 
 
 	//-------------------------------------------------------------------------------------------
