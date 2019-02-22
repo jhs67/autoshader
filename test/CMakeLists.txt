@@ -116,7 +116,7 @@ foreach(file ${files})
   if(test_shaders)
     set(test_spirv ${test_shaders})
     list(TRANSFORM test_spirv APPEND ".spv")
-    compile_autoshader("${basename}-autoshader.h" ${test_spirv})
+    autoshader(OUTPUT "${basename}-autoshader.h" SHADERS ${test_spirv})
     list(APPEND test_files "${basename}-autoshader.h")
   endif()
 
