@@ -129,7 +129,7 @@ namespace autoshader {
 	void descriptor_layout(fmt::memory_buffer &r, const DescriptorSet &set,
 			const string &name, const string &indent) {
 		bool c = false;
-		format_to(r, "{}auto get{}LayoutBindings() {{\n", indent, name);
+		format_to(r, "{}inline auto get{}LayoutBindings() {{\n", indent, name);
 		format_to(r, "{}  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{", indent,
 			set.descriptors.size());
 		for (auto &d : set.descriptors) {

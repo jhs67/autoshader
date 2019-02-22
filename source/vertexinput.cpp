@@ -107,7 +107,7 @@ namespace autoshader {
 		format_to(r, "{}    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", indent, name);
 		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
 
-		format_to(r, "{}auto getVertexAttributeDescriptions() {{\n", indent);
+		format_to(r, "{}inline auto getVertexAttributeDescriptions() {{\n", indent);
 		format_to(r, "{}  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
 			indent, res.stage_inputs.size());
 		for (auto &v : res.stage_inputs) {

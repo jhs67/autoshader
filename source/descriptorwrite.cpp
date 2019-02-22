@@ -23,7 +23,7 @@ R"({0}struct DescriptorSet{1}Writer {{
 {0}  }}
 {0}}};
 
-{0}DescriptorSet{1}Writer descriptorSet{1}Writer(vk::DescriptorSet s) {{
+{0}inline auto descriptorSet{1}Writer(vk::DescriptorSet s) {{
 {0}  return DescriptorSet{1}Writer(s);
 {0}}}
 

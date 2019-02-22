@@ -148,7 +148,7 @@ namespace autoshader {
 		}
 
 		bool c = false;
-		format_to(r, "{}auto getPushConstantRanges() {{\n", indent);
+		format_to(r, "{}inline auto getPushConstantRanges() {{\n", indent);
 		format_to(r, "{}  return std::array<vk::PushConstantRange, {}>({{{{", indent,
 			flagranges.size());
 		for (auto &d : flagranges) {
