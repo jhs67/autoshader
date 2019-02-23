@@ -107,11 +107,13 @@ namespace autoshader {
 		vk::Viewport viewport;
 		vk::PipelineViewportStateCreateInfo vps;
 		constexpr bool withviewport = Arg<vk::Rect2D>::contains<A...>() ||
+			Arg<vk::Extent2D>::contains<A...>() ||
 			Arg<vk::Viewport>::contains<A...>() ||
 			Arg<vk::PipelineViewportStateCreateInfo>::contains<A...>();
 		if (withviewport) {
 			// default the viewport from the scissor or vice-versa
-			scissor = Arg<vk::Rect2D>::dget(scissor, std::forward<A>(a)...);
+			auto ext = Arg<vk::Extent2D>::dget(scissor.extent, std::forward<A>(a)...);
+			scissor = Arg<vk::Rect2D>::dget(vk::Rect2D({}, ext), std::forward<A>(a)...);
 			viewport = Arg<vk::Viewport>::dget({
 				float(scissor.offset.x), float(scissor.offset.y),
 				float(scissor.extent.width), float(scissor.extent.height), 0, 1 },
