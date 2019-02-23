@@ -29,6 +29,16 @@ R"({0}struct DescriptorSet{1}Writer {{
 
 )";
 
+		auto setUniformSrc =
+R"({0}  DescriptorSet{1}Writer& set{2}(vk::Buffer b, vk::DeviceSize o, vk::DeviceSize r = VK_WHOLE_SIZE) {{
+{0}    di{3} = vk::DescriptorBufferInfo{{ b, r == VK_WHOLE_SIZE ? 0 : o, r == VK_WHOLE_SIZE ? o : r }};
+{0}    if (writeIndex >= {5})
+{0}      throw std::runtime_error("autoshader descriptor set writer overflow");
+{0}    writes[writeIndex++] = {{ descriptorSet, {3}, 0, 1, {4}, nullptr, &di{3} }};
+{0}    return *this;
+{0}  }}
+)";
+
 		auto setBufferSrc =
 R"({0}  DescriptorSet{1}Writer& set{2}(vk::Buffer b, vk::DeviceSize o = 0, vk::DeviceSize r = VK_WHOLE_SIZE) {{
 {0}    di{3} = vk::DescriptorBufferInfo{{ b, o, r }};
@@ -112,6 +122,9 @@ R"({0}  DescriptorSet{1}Writer& set{2}(vk::ImageView i, vk::ImageLayout l = vk::
 							vulkan_descriptor_type(d.second.type), set.descriptors.size());
 						break;
 					case DescriptorType::Uniform:
+						format_to(b, setUniformSrc, indent, name, d.second.name, d.first,
+							vulkan_descriptor_type(d.second.type), set.descriptors.size());
+						break;
 					case DescriptorType::StorageBuffer:
 						format_to(b, setBufferSrc, indent, name, d.second.name, d.first,
 							vulkan_descriptor_type(d.second.type), set.descriptors.size());
