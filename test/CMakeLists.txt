@@ -59,6 +59,9 @@ endfunction()
 
 project(autoshader-test)
 
+hunter_add_package(Catch)
+hunter_add_package(glm)
+
 find_package(Vulkan REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)

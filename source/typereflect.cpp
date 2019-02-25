@@ -85,6 +85,11 @@ namespace autoshader {
 				throw std::runtime_error("shouldn't get c_type_size of array elements");
 
 			switch (type.basetype) {
+				case SPIRType::SByte:
+				case SPIRType::UByte:
+				case SPIRType::Short:
+				case SPIRType::UShort:
+				case SPIRType::ControlPointArray:
 				case SPIRType::Void:
 				case SPIRType::Unknown:
 				case SPIRType::AtomicCounter:
@@ -278,6 +283,21 @@ namespace autoshader {
 			}
 			case SPIRType::Sampler: {
 				throw std::runtime_error("sampler's not supported");
+			}
+			case SPIRType::SByte: {
+				throw std::runtime_error("SByte's not supported");
+			}
+			case SPIRType::UByte: {
+				throw std::runtime_error("UByte's not supported");
+			}
+			case SPIRType::Short: {
+				throw std::runtime_error("Short's not supported");
+			}
+			case SPIRType::UShort: {
+				throw std::runtime_error("UShort's not supported");
+			}
+			case SPIRType::ControlPointArray: {
+				throw std::runtime_error("ControlPointArray's not supported");
 			}
 		}
 		throw std::runtime_error("invalid type can't be converted to string");

@@ -5,7 +5,7 @@
 //  Copyright (c) Jon Spencer. See LICENSE file.
 //
 
-#include "catch.hpp"
+#include "catch2/catch.hpp"
 #include "autoshader/anyarg.h"
 
 namespace atest {

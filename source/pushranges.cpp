@@ -62,6 +62,11 @@ namespace autoshader {
 				return type.array.front() * comp.type_struct_member_array_stride(type, i);
 
 			switch (type.basetype) {
+				case SPIRType::SByte:
+				case SPIRType::UByte:
+				case SPIRType::Short:
+				case SPIRType::UShort:
+				case SPIRType::ControlPointArray:
 				case SPIRType::Void:
 				case SPIRType::Unknown:
 				case SPIRType::AtomicCounter:

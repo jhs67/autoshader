@@ -5,7 +5,7 @@
 //  Copyright (c) Jon Spencer. See LICENSE file.
 //
 
-#include "catch.hpp"
+#include "catch2/catch.hpp"
 #include "glm/glm.hpp"
 #include "vulkan/vulkan.hpp"
 #include "autoshader/createpipe.h"

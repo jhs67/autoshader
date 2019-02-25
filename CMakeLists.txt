@@ -5,10 +5,12 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-# use vcpkg for dependencies
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-	set(CMAKE_TOOLCHAIN_FILE "$ENV{HOME}/devel/external/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-endif()
+# Use hunter for dependencies
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/jhs67/hunter/archive/20190226.tar.gz"
+    SHA1 "5624623db1728e8bfdac9f172bcdd57cc09c655b"
+)
 
 # Options
 option(AUTOSHADER_BuildTests "Build the unit tests when BUILD_TESTING is enabled." ON)
@@ -19,10 +21,15 @@ include(cmake/autoshader.cmake)
 
 project(autoshader)
 
+hunter_add_package(spirv-cross)
+hunter_add_package(cxxopts)
+hunter_add_package(fmt)
+
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+
 
 set(sources
 	source/autoshader.cpp

@@ -24,6 +24,11 @@ namespace autoshader {
 				case SPIRType::Unknown: {
 					throw std::runtime_error("cant' get vertex format of unkown type");
 				}
+				case SPIRType::SByte:
+				case SPIRType::UByte:
+				case SPIRType::Short:
+				case SPIRType::UShort:
+				case SPIRType::ControlPointArray:
 				case SPIRType::Char:
 				case SPIRType::Boolean:
 				case SPIRType::Void:
