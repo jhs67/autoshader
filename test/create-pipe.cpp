@@ -29,8 +29,23 @@ TEST_CASE( "create-pipe" ) {
 		REQUIRE( phys.size() > 0 );
 		auto dev = phys[0].createDeviceUnique({});
 
+		vk::AttachmentDescription attachment{{}, vk::Format::eR8G8B8A8Unorm,
+			vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+			vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+			vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eTransferSrcOptimal,
+			vk::ImageLayout::eTransferSrcOptimal };
+		vk::AttachmentReference colorReference{ 0, vk::ImageLayout::eColorAttachmentOptimal };
+		vk::SubpassDescription subpass({}, vk::PipelineBindPoint::eGraphics, 0, nullptr, 1,
+			&colorReference, nullptr, nullptr);
+		auto rp = dev->createRenderPassUnique({ {},
+			1, &attachment,
+			1, &subpass });
+
+		// auto rp = dev->createRenderPassUnique({});
+		REQUIRE( *rp != vk::RenderPass() );
+
 		shader::Components pcomp(*dev);
-		auto pipeline = pcomp.createPipe(*dev, vk::RenderPass());
+		auto pipeline = pcomp.createPipe(*dev, *rp);
 		REQUIRE( *pipeline != vk::Pipeline() );
 
 	}
