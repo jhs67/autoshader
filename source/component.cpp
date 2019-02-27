@@ -30,10 +30,12 @@ namespace autoshader {
 			format_to(r, "{0}    auto pr = getPushConstantRanges();\n", indent);
 		}
 		if (!sets.empty()) {
+			bool c = false;
 			format_to(r, "{}    auto l = std::array<vk::DescriptorSetLayout,{}>({{{{", indent, sets.size());
 			for (auto &s : sets) {
 				auto sn = sets.size() == 1 ? "" : fmt::format("{}", s.first);
-				format_to(r, " *slb{}{}", sn, s.first == (sets.end()--)->first ? "" : ",");
+				format_to(r, "{} *slb{}", c ? "," : "", sn);
+				c = true;
 			}
 			format_to(r, " }}}});\n", indent, sets.size());
 			format_to(r, "{}    auto pl = d.createPipelineLayoutUnique({{ {{}}, {}, l.data()",
