@@ -105,7 +105,6 @@ namespace autoshader {
 		// scissor and viewport
 		vk::Rect2D scissor;
 		vk::Viewport viewport;
-		vk::PipelineViewportStateCreateInfo vps;
 		constexpr bool withviewport = Arg<vk::Rect2D>::contains<A...>() ||
 			Arg<vk::Extent2D>::contains<A...>() ||
 			Arg<vk::Viewport>::contains<A...>() ||
@@ -122,10 +121,9 @@ namespace autoshader {
 				{ int32_t(viewport.x), int32_t(viewport.y) },
 				{ uint32_t(viewport.width), uint32_t(viewport.height) }),
 				std::forward<A>(a)...);
-
-			vps = Arg<vk::PipelineViewportStateCreateInfo>::dget({ {},
-				1, &viewport, 1, &scissor }, std::forward<A>(a)...);
 		}
+		auto vps = Arg<vk::PipelineViewportStateCreateInfo>::dget({ {},
+			1, &viewport, 1, &scissor }, std::forward<A>(a)...);
 
 		// resterization state
 		auto ras = Arg<vk::PipelineRasterizationStateCreateInfo>::dget({ {}, false, false,
