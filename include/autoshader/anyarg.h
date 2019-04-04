@@ -73,11 +73,11 @@ namespace anyarg {
 		// Get a value that must be in the argument pack
 		template <typename E, typename... A,
 			std::enable_if_t<i::type_match_t<T, E>{}, int> = 0>
-		static T get(E && e, A &&...a) { return e; }
+		static T get(E e, A &&...a) { return e; }
 
 		template <typename E, typename... A,
 			std::enable_if_t<!i::type_match_t<T, E>{}, int> = 0>
-		static T get(E && e, A &&...a) { return get(std::forward<A>(a)...); }
+		static T get(E e, A &&...a) { return get(std::forward<A>(a)...); }
 
 		template <typename... A>
 		static T get() {
@@ -88,11 +88,11 @@ namespace anyarg {
 
 		template <typename E, typename... A,
 			std::enable_if_t<i::type_match_t<T, E>{}, int> = 0>
-		static T dget(T d, E && e, A &&...a) { return e; }
+		static T dget(T d, E e, A &&...a) { return e; }
 
 		template <typename E, typename... A,
 			std::enable_if_t<!i::type_match_t<T, E>{}, int> = 0>
-		static T dget(T d, E && e, A &&...a) { return dget(d, std::forward<A>(a)...); }
+		static T dget(T d, E e, A &&...a) { return dget(d, std::forward<A>(a)...); }
 
 		// Get a pointer to a value or return nullptr
 		static T* pget() { return nullptr; }
