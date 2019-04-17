@@ -59,7 +59,7 @@ namespace autoshader {
 
 			auto type = comp.get_type(stype.member_types[i]);
 			if (!type.array.empty())
-				return type.array.front() * comp.type_struct_member_array_stride(type, i);
+				return type.array.front() * comp.type_struct_member_array_stride(stype, i);
 
 			switch (type.basetype) {
 				case SPIRType::SByte:
