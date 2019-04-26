@@ -14,16 +14,35 @@ namespace autoshader {
 		std::map<uint32_t, DescriptorSet> &sets, vector<ShaderRecord> &sh,
 		bool withVertex, bool withPush, const string &indent) {
 
+		size_t arity = 0;
+		fmt::memory_buffer a;
+		std::map<uint32_t, string> setargs;
+		for (auto &s : sets) {
+			bool e = false;
+			fmt::memory_buffer b;
+			for (auto &d : s.second.descriptors) {
+				if (d.second.arraysize == 0) {
+					format_to(a, ", int32_t a{}", arity);
+					format_to(b, "{}a{}", e ? ", " : "", arity);
+					arity += 1;
+					e = true;
+				}
+			}
+			setargs[s.first] = to_string(b);
+		}
+
 		format_to(r, "{}struct Components {{\n", indent);
+		format_to(r, "{}  static constexpr size_t arity = {};\n\n", indent, arity);
 		format_to(r, "{}  Components() {{}}\n", indent);
 		format_to(r, "{}  Components(Components &&o) noexcept {{ swap(o); }}\n", indent);
 		format_to(r, "{}  Components &operator = (Components &&o) noexcept {{ swap(o); return *this; }}\n", indent);
 		format_to(r, "\n");
 
-		format_to(r, "{}  Components(vk::Device d) {{\n", indent);
+		format_to(r, "{}  Components(vk::Device d{}) {{\n", indent, to_string(a));
 		for (auto &s : sets) {
 			auto sn = sets.size() == 1 ? "" : fmt::format("{}", s.first);
-			format_to(r, "{0}    auto lb{1} = getDescriptorSet{1}LayoutBindings();\n", indent, sn);
+			format_to(r, "{0}    auto lb{1} = getDescriptorSet{1}LayoutBindings({2});\n",
+				indent, sn, setargs[s.first]);
 			format_to(r, "{0}    auto slb{1} = d.createDescriptorSetLayoutUnique({{ {{}}, uint32_t(lb{1}.size()), lb{1}.data() }});\n", indent, sn);
 		}
 		if (withPush) {

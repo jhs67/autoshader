@@ -122,25 +122,45 @@ namespace autoshader {
 		get_descriptor_sets(r, comp, em, res.separate_samplers, DescriptorType::Sampler);
 	}
 
+	namespace {
+
+		auto layoutSrc =
+R"({0}inline auto get{1}LayoutBindings({2}) {{
+{0}  return std::array<vk::DescriptorSetLayoutBinding, {3}>({{{{{4}
+{0}  }}}});
+{0}}}
+
+)";
+
+	}
+
 
 	//-------------------------------------------------------------------------------------------
 	// write out the descriptor set definition
 
 	void descriptor_layout(fmt::memory_buffer &r, const DescriptorSet &set,
 			const string &name, const string &indent) {
+
+		int args = 0;
 		bool c = false;
-		format_to(r, "{}inline auto get{}LayoutBindings() {{\n", indent, name);
-		format_to(r, "{}  return std::array<vk::DescriptorSetLayoutBinding, {}>({{{{", indent,
-			set.descriptors.size());
+		fmt::memory_buffer a, b;
 		for (auto &d : set.descriptors) {
-			format_to(r, c ? ",\n" : "\n");
-			format_to(r, "{}    {{ {}, {}, {}, ", indent, d.first,
-				vulkan_descriptor_type(d.second.type), d.second.arraysize);
-			vulkan_stage_flags(r, d.second.stages);
-			format_to(r, " }}");
+			format_to(b, "{}{}    {{ {}, {}, ", c ? ",\n" : "\n", indent,
+				d.first, vulkan_descriptor_type(d.second.type));
+			if (d.second.arraysize == 0) {
+				format_to(b, "a{}, ", args);
+				format_to(a, "{}uint32_t a{}", args ? ", " : "", args);
+				args += 1;
+			}
+			else {
+				format_to(b, "{}, ", d.second.arraysize);
+			}
+			vulkan_stage_flags(b, d.second.stages);
+			format_to(b, " }}");
 			c = true;
 		}
-		format_to(r, "\n{}  }}}});\n{}}}\n\n", indent, indent);
+
+		format_to(r, layoutSrc, indent, name, to_string(a), set.descriptors.size(), to_string(b));
 	}
 
 

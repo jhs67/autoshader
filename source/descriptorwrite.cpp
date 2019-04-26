@@ -32,28 +32,35 @@ R"({0}struct DescriptorSet{1}Writer {{
 		auto setUniformArgs = "vk::Buffer b, vk::DeviceSize o, vk::DeviceSize r = VK_WHOLE_SIZE";
 		auto setUniformInfo = "vk::DescriptorBufferInfo{ b, r == VK_WHOLE_SIZE ? 0 : o, r == VK_WHOLE_SIZE ? o : r }";
 		auto setUniformWrite = "nullptr, ";
+		auto setUniformMember = "pBufferInfo";
 
 		auto setBufferArgs = "vk::Buffer b, vk::DeviceSize o = 0, vk::DeviceSize r = VK_WHOLE_SIZE";
 		auto setBufferInfo = "vk::DescriptorBufferInfo{ b, o, r }";
 		auto setBufferWrite = "nullptr, ";
+		auto setBufferMember = "pBufferInfo";
 
 		auto setImageSamplerArgs = "vk::Sampler b, vk::ImageView i, vk::ImageLayout l = vk::ImageLayout::eShaderReadOnlyOptimal";
 		auto setImageSamplerInfo = "vk::DescriptorImageInfo{ b, i, l }";
 		auto setImageSamplerWrite = "";
+		auto setImageSamplerMember = "pImageInfo";
 
 		auto setSamplerArgs = "vk::Sampler b";
 		auto setSamplerInfo = "vk::DescriptorImageInfo{ b }";
 		auto setSamplerWrite = "";
+		auto setSamplerMember = "pImageInfo";
 
 		auto setImageArgs = "vk::ImageView i, vk::ImageLayout l = vk::ImageLayout::eGeneral";
 		auto setImageInfo = "vk::DescriptorImageInfo{ {}, i, l }";
 		auto setImageWrite = "";
+		auto setImageMember = "pImageInfo";
 
 		auto bufferInfoSrc = "{0}  vk::DescriptorBufferInfo di{1};\n";
 		auto bufferInfoArraySrc = "{0}  vk::DescriptorBufferInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
+		auto bufferInfoVectorSrc = "{0}  std::vector<vk::DescriptorBufferInfo> di{1};\n{0}  size_t ic{1};\n";
 
 		auto imageInfoSrc = "{0}  vk::DescriptorImageInfo di{1};\n";
 		auto imageInfoArraySrc = "{0}  vk::DescriptorImageInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
+		auto imageInfoVectorSrc = "{0}  std::vector<vk::DescriptorImageInfo> di{1};\n{0}  size_t ic{1};\n";
 
 		auto setSingleSrc =
 R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
@@ -82,37 +89,58 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 
 )";
 
+		auto setVectorSrc =
+R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
+{0}    if (ic{3} == size_t(-1)) {{
+{0}      if (writeIndex >= {6})
+{0}        throw std::runtime_error("autoshader descriptor set writer overflow");
+{0}      ic{3} = writeIndex;
+{0}      writes[writeIndex++] = {{ descriptorSet, {3}, 0, 0, {7}, {8}nullptr }};
+{0}    }}
+{0}    di{3}.emplace_back({5});
+{0}    writes[ic{3}].descriptorCount = uint32_t(di{3}.size());
+{0}    writes[ic{3}].{10} = di{3}.data();
+{0}    return *this;
+{0}  }}
+
+)";
+
 		void set_generic_src(fmt::memory_buffer &r, const string &name, const string &indent,
 				uint32_t set, const DescriptorRecord &d, size_t writeLimit) {
 
 			// get the type specific parts
-			const char *argf, *infof, *writef;
+			const char *argf, *infof, *writef, *memberf;
 			switch (d.type) {
 				case DescriptorType::Sampler:
 					argf = setSamplerArgs;
 					infof = setSamplerInfo;
 					writef = setSamplerWrite;
+					memberf = setSamplerMember;
 					break;
 				case DescriptorType::ImageSampler:
 					argf = setImageSamplerArgs;
 					infof = setImageSamplerInfo;
 					writef = setImageSamplerWrite;
+					memberf = setImageSamplerMember;
 					break;
 				case DescriptorType::SampledImage:
 				case DescriptorType::StorageImage:
 					argf = setImageArgs;
 					infof = setImageInfo;
 					writef = setImageWrite;
+					memberf = setImageMember;
 					break;
 				case DescriptorType::Uniform:
 					argf = setUniformArgs;
 					infof = setUniformInfo;
 					writef = setUniformWrite;
+					memberf = setUniformMember;
 					break;
 				case DescriptorType::StorageBuffer:
 					argf = setBufferArgs;
 					infof = setBufferInfo;
 					writef = setBufferWrite;
+					memberf = setBufferMember;
 					break;
 			}
 
@@ -120,12 +148,14 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 			const char *srcf;
 			if (d.arraysize == 1)
 				srcf = setSingleSrc;
+			else if (d.arraysize == 0)
+				srcf = setVectorSrc;
 			else
 				srcf = setArraySrc;
 
 			// format the source
 			format_to(r, srcf, indent, name, d.name, set, argf, infof, writeLimit,
-				vulkan_descriptor_type(d.type), writef, d.arraysize);
+				vulkan_descriptor_type(d.type), writef, d.arraysize, memberf);
 		}
 
 
@@ -146,6 +176,10 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 						if (d.second.arraysize == 1) {
 							format_to(b, imageInfoSrc, indent, d.first);
 						}
+						else if (d.second.arraysize == 0) {
+							format_to(b, imageInfoVectorSrc, indent, d.first);
+							format_to(i, ", ic{}(size_t(-1))", d.first);
+						}
 						else {
 							format_to(b, imageInfoArraySrc, indent, d.first, d.second.arraysize);
 							format_to(i, ", ic{}(size_t(-1))", d.first);
@@ -155,6 +189,10 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 					case DescriptorType::StorageBuffer:
 						if (d.second.arraysize == 1) {
 							format_to(b, bufferInfoSrc, indent, d.first);
+						}
+						else if (d.second.arraysize == 0) {
+							format_to(b, bufferInfoVectorSrc, indent, d.first);
+							format_to(i, ", ic{}(size_t(-1))", d.first);
 						}
 						else {
 							format_to(b, bufferInfoArraySrc, indent, d.first, d.second.arraysize);

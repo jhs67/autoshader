@@ -1,7 +1,15 @@
 
 #version 450
+#extension GL_EXT_nonuniform_qualifier: require
+
+layout(std430, set=0) buffer Uniform1 { vec4 foo; } fred[];
 
 layout(set=1, binding=0) uniform sampler2D textures[64];
 
+layout(push_constant) uniform Push {
+	int index;
+};
+
 void main() {
+	fred[index].foo = texture(textures[7], vec2(0.5));
 }

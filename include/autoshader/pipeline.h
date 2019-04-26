@@ -22,10 +22,22 @@ namespace autoshader {
 
 		~Pipeline() { if (pipeline != vk::Pipeline()) components.device.destroyPipeline(pipeline); }
 
+		template <class Tuple, std::size_t... I>
+		void init_(vk::Device d, Tuple &t, std::index_sequence<I...>) {
+			components = Components(d, std::get<I>(t)...);
+		}
+
+		template <class Tuple, std::size_t... I>
+		void create_(Tuple &t, std::index_sequence<I...>) {
+			createPipe(std::forward<std::tuple_element_t<I + Components::arity, Tuple>>(
+				std::get<I + Components::arity>(t))...);
+		}
+
 	    template <typename... A>
 		void init(vk::Device d, A &&...a)  {
-			components = Components(d);
-			createPipe(std::forward<A>(a)...);
+			auto i = std::forward_as_tuple(std::forward<A>(a)...);
+			init_(d, i, std::make_index_sequence<Components::arity>());
+			create_(i, std::make_index_sequence<sizeof...(A) - Components::arity>());
 		}
 
 	    template <typename... A>
