@@ -53,9 +53,6 @@ namespace autoshader {
 		assert(dev != vk::Device{});
 
 		return dev.createComputePipelineUnique(cache, { flags, stage, layout });
-
-		assert(false);
-		return vk::UniquePipeline();
 	}
 
 	struct SubPass {

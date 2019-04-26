@@ -80,6 +80,7 @@ set(files
   vertex-input.cpp
   any-arg.cpp
   push-ranges.cpp
+  array-descriptor.cpp
   )
 
 if(AUTOSHADER_VulkanTests)
@@ -99,6 +100,7 @@ set(shaders
   create-pipe.frag
   push-ranges.vert
   push-ranges.frag
+  array-descriptor.comp
   )
 
 # compile the shaders to spirv
