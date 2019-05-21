@@ -9,6 +9,7 @@
 #include "shadersource.h"
 #include "descriptorset.h"
 #include "descriptorwrite.h"
+#include "specializer.h"
 #include "typereflect.h"
 #include "vertexinput.h"
 #include "pushranges.h"
@@ -207,6 +208,8 @@ namespace autoshader {
 		bool withPush = push_ranges(r, shaders, indent);
 
 		descriptor_writer(r, descriptorSets, indent);
+
+		specializers(r, shaders, indent);
 
 		if (!options["no-source"].as<bool>()) {
 			shader_source_decl(r, shaders, indent);

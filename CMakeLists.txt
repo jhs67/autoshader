@@ -37,6 +37,8 @@ set(sources
 	source/pushranges.h
 	source/shadersource.cpp
 	source/shadersource.h
+	source/specializer.cpp
+	source/specializer.h
 	source/typereflect.cpp
 	source/typereflect.h
 	source/vertexinput.cpp
