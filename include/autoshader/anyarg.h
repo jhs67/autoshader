@@ -105,6 +105,19 @@ namespace anyarg {
 			std::enable_if_t<!i::type_match_t<T, E>{}, int> = 0>
 		static T* pget(E && e, A &&...a) { return pget(std::forward<A>(a)...); }
 
+		// Get a pointer to a value which meets a criteria or return nullptr
+		template <typename M>
+		static T* mget(const M& m) { return nullptr; }
+
+		template <typename M, typename E, typename... A,
+			std::enable_if_t<i::type_match_t<T, E>{}, int> = 0>
+		static T* mget(const M& m, E && e, A &&...a) {
+			return m(e) ? &e : pget(m, std::forward<A>(a)...); }
+
+		template <typename M, typename E, typename... A,
+			std::enable_if_t<!i::type_match_t<T, E>{}, int> = 0>
+		static T* mget(const M& m, E && e, A &&...a) { return pget(m, std::forward<A>(a)...); }
+
 		// Gather all the values into an array
 		template <typename R>
 		static void gather_(R &r, size_t i) {}

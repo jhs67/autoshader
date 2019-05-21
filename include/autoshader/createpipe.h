@@ -19,6 +19,19 @@ namespace autoshader {
 	//--   options vk::PipelineCreateFlags, vk::PipelineCache
 
 	template <typename... A>
+	vk::SpecializationInfo *getSpecialization(vk::ShaderStageFlags stage, A &&...a) {
+		// Look for a stage/spec pair that matches
+		using anyarg::Arg;
+		typedef std::pair<vk::ShaderStageFlags,vk::SpecializationInfo> SpecPair;
+		auto r = Arg<SpecPair>::mget([stage] (auto &p) { return p.first == stage; },
+			std::forward<A>(a)...);
+		if (r != nullptr)
+			return &r->second;
+		// Look for just a specialization info
+		return Arg<vk::SpecializationInfo>::pget(std::forward<A>(a)...);
+	}
+
+	template <typename... A>
 	vk::UniquePipeline createComputePipe(A &&...a) {
 		using anyarg::Arg;
 		// You have to pass in this stuff
@@ -40,7 +53,12 @@ namespace autoshader {
 
 		// get the compute stage
 		auto stage = Arg<vk::PipelineShaderStageCreateInfo>::dget({ {},
-			vk::ShaderStageFlagBits::eCompute, module, entry.c_str() }, std::forward<A>(a)...);
+			vk::ShaderStageFlagBits::eCompute, module, entry.c_str() },
+			std::forward<A>(a)...);
+
+		// look for specialization constants
+		if (stage.pSpecializationInfo == nullptr)
+			stage.pSpecializationInfo = getSpecialization(stage.stage, std::forward<A>(a)...);
 
 		// pipeline layout
 		auto layout = Arg<vk::PipelineLayout>::get(std::forward<A>(a)...);
@@ -80,6 +98,12 @@ namespace autoshader {
 	 	auto flags = Arg<vk::PipelineCreateFlags>::dget({}, std::forward<A>(a)...);
 		auto stages = Arg<vk::PipelineShaderStageCreateInfo>::gather(std::forward<A>(a)...);
 		static_assert(stages.size() > 1, "need at least two stages for a graphics pipeline");
+
+		// look for specialization constants
+		for (auto &stage : stages) {
+			if (stage.pSpecializationInfo == nullptr)
+				stage.pSpecializationInfo = getSpecialization(stage.stage, std::forward<A>(a)...);
+		}
 
 		// gather any bindings and attributes passed by the user.
 		auto bin = Arg<vk::VertexInputBindingDescription>::gather(std::forward<A>(a)...);
