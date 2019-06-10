@@ -85,18 +85,7 @@ namespace autoshader {
 				throw std::runtime_error("shouldn't get c_type_size of array elements");
 
 			switch (type.basetype) {
-				case SPIRType::SByte:
-				case SPIRType::UByte:
-				case SPIRType::Short:
-				case SPIRType::UShort:
-				case SPIRType::ControlPointArray:
-				case SPIRType::Void:
-				case SPIRType::Unknown:
-				case SPIRType::AtomicCounter:
-				case SPIRType::Image:
-				case SPIRType::SampledImage:
-				case SPIRType::Sampler:
-				case SPIRType::Boolean:
+				default:
 					throw std::runtime_error("invalid type for structure member");
 
 				case SPIRType::Char:
@@ -154,7 +143,7 @@ namespace autoshader {
 			if (!type.array.empty()) {
 				auto l = std::max(type.array.back(), uint32_t(1));
 				auto s = comp.type_struct_member_array_stride(stct, m);
-				auto t = std::accumulate(begin(type.array), end(type.array), uint32_t(1),
+				auto t = std::accumulate(type.array.begin(), type.array.end(), uint32_t(1),
 					[] (auto a, auto b) { return a * std::max(b, uint32_t(1)); });
 				arrpad = s * l / t - carrsize;
 				carrsize += arrpad;
@@ -227,9 +216,8 @@ namespace autoshader {
 	string type_string(spirv_cross::Compiler &comp, spirv_cross::SPIRType type) {
 		using spirv_cross::SPIRType;
 		switch (type.basetype) {
-			case SPIRType::Unknown: {
-				throw std::runtime_error("unkown type can't be converted to string");
-			}
+			default:
+				throw std::runtime_error("unexpected type can't be converted to string");
 			case SPIRType::Void: {
 				if (type.vecsize != 1 || type.columns != 1)
 					throw std::runtime_error("invalid vector of void's");
@@ -277,27 +265,6 @@ namespace autoshader {
 			case SPIRType::Image: {
 				return fmt::format("{}{}", type.image.sampled == 1 ? "texture" : "image",
 					image_dimension_string(type.image.dim));
-			}
-			case SPIRType::SampledImage: {
-				throw std::runtime_error("sampled image's not supported");
-			}
-			case SPIRType::Sampler: {
-				throw std::runtime_error("sampler's not supported");
-			}
-			case SPIRType::SByte: {
-				throw std::runtime_error("SByte's not supported");
-			}
-			case SPIRType::UByte: {
-				throw std::runtime_error("UByte's not supported");
-			}
-			case SPIRType::Short: {
-				throw std::runtime_error("Short's not supported");
-			}
-			case SPIRType::UShort: {
-				throw std::runtime_error("UShort's not supported");
-			}
-			case SPIRType::ControlPointArray: {
-				throw std::runtime_error("ControlPointArray's not supported");
 			}
 		}
 		throw std::runtime_error("invalid type can't be converted to string");

@@ -25,7 +25,7 @@ namespace autoshader {
 			case spv::ExecutionModelFragment: return "frag";
 			case spv::ExecutionModelGLCompute: return "comp";
 			case spv::ExecutionModelKernel: return "krnl";
-			case spv::ExecutionModelMax: break;
+			default: break;
 		}
 		throw std::runtime_error("invalid shader execution model");
 	}

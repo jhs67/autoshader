@@ -1,0 +1,3 @@
+[submodule "pkgxx"]
+	path = pkgxx
+	url = https://github.com/jhs67/pkgxx.git

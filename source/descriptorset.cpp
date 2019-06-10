@@ -39,7 +39,8 @@ namespace autoshader {
 		// get descriptor sets for the given resource type
 
 		void get_descriptor_sets(std::map<uint32_t, DescriptorSet> &ds, spirv_cross::Compiler &comp,
-				spv::ExecutionModel em, std::vector<spirv_cross::Resource> &res, DescriptorType d) {
+				spv::ExecutionModel em, spirv_cross::SmallVector<spirv_cross::Resource> &res,
+				DescriptorType d) {
 
 			for (auto &v : res) {
 				auto set = comp.get_decoration(v.id, spv::DecorationDescriptorSet);

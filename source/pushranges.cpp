@@ -62,18 +62,7 @@ namespace autoshader {
 				return type.array.front() * comp.type_struct_member_array_stride(stype, i);
 
 			switch (type.basetype) {
-				case SPIRType::SByte:
-				case SPIRType::UByte:
-				case SPIRType::Short:
-				case SPIRType::UShort:
-				case SPIRType::ControlPointArray:
-				case SPIRType::Void:
-				case SPIRType::Unknown:
-				case SPIRType::AtomicCounter:
-				case SPIRType::Image:
-				case SPIRType::SampledImage:
-				case SPIRType::Sampler:
-				case SPIRType::Boolean:
+				default:
 					throw std::runtime_error("invalid type for structure member");
 
 				case SPIRType::Char:

@@ -1,0 +1,8 @@
+source https://github.com/microsoft/vcpkg/archive/7b0df74ced4e72841d29f89ea021cc215129dcbc.tar.gz
+sha256 55f77e460dce55bfde29fe2c9dfbb188cd8fa73918b574b69ab547adecf59472
+
+depends catch2
+depends cxxopts
+depends fmt
+depends glm
+depends spirv-cross
