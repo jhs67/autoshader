@@ -22,10 +22,12 @@ function(compile_spirv_shader source)
     file(MAKE_DIRECTORY ${out_dir})
   endif()
 
+  find_program(GLSLANGVALIDATOR_PROGRAM glslangValidator HINTS $ENV{VULKAN_SDK}/bin)
+
   # invoke glslang to compile the shader
   add_custom_command(
     OUTPUT ${out_name}
-    COMMAND glslangValidator -o "${CMAKE_CURRENT_BINARY_DIR}/${out_name}"
+    COMMAND ${GLSLANGVALIDATOR_PROGRAM} -o "${CMAKE_CURRENT_BINARY_DIR}/${out_name}"
       -V "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
     DEPENDS ${source} ${arg_DEPENDS}
     VERBATIM
