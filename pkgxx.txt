@@ -1,5 +1,5 @@
-source https://github.com/microsoft/vcpkg/archive/ffed6950623fd17a0928a71e74d31d097b6dcc21.tar.gz
-sha256 4d6e3799ad0d39309b1268dcac56662ed08d6ba37743cc27bc36ca1058e314f1
+source https://github.com/microsoft/vcpkg/archive/2019.12.tar.gz
+sha256 c9e9cf3eeed0f59bcbdc9060de503fd2cccbc044d7436121d87b98fdcb5872f2
 
 depends catch2
 depends cxxopts
