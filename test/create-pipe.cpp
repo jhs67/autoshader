@@ -27,7 +27,9 @@ TEST_CASE( "create-pipe" ) {
 		auto inst = vk::createInstanceUnique({ {}, &appinfo });
 		auto phys = inst->enumeratePhysicalDevices();
 		REQUIRE( phys.size() > 0 );
-		auto dev = phys[0].createDeviceUnique({});
+		float priority = 1.0f;
+		auto que = vk::DeviceQueueCreateInfo{ {}, 0, 1, &priority };
+		auto dev = phys[0].createDeviceUnique({ {}, 1, &que });
 
 		vk::AttachmentDescription attachment{{}, vk::Format::eR8G8B8A8Unorm,
 			vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
