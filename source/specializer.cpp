@@ -93,11 +93,11 @@ R"(
 			// group the workgroup size constants
 			spirv_cross::SpecializationConstant x, y, z;
 			comp.get_work_group_size_specialization_constants(x, y, z);
-			if (x.id != 0 || x.constant_id != 0)
+			if (uint32_t(x.id) != 0 || x.constant_id != 0)
 				specs.emplace(x.constant_id, SpecToWrite{ x.id, "WorkGroupSizeX" });
-			if (y.id != 0 || y.constant_id != 0)
+			if (uint32_t(y.id) != 0 || y.constant_id != 0)
 				specs.emplace(y.constant_id, SpecToWrite{ y.id, "WorkGroupSizeY" });
-			if (z.id != 0 || z.constant_id != 0)
+			if (uint32_t(z.id) != 0 || z.constant_id != 0)
 				specs.emplace(z.constant_id, SpecToWrite{ z.id, "WorkGroupSizeZ" });
 
 			// common case - no specialization constant
