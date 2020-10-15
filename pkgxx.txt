@@ -1,8 +1,0 @@
-source https://github.com/microsoft/vcpkg/archive/2020.07.tar.gz
-sha256 11af5dc5ac7a01d98145e894f5962711b16b23cbcf6998bef9c77f00a565c9d1
-
-depends catch2
-depends cxxopts
-depends fmt
-depends glm
-depends spirv-cross

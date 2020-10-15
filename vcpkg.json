@@ -1,0 +1,15 @@
+{
+    "name": "autoshader",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "catch2",
+        "cxxopts",
+        "fmt",
+        "glm",
+        "spirv-cross"
+    ],
+    "$pkgxx": {
+        "source": "https://github.com/microsoft/vcpkg/archive/2020.07.tar.gz",
+        "sha256": "11af5dc5ac7a01d98145e894f5962711b16b23cbcf6998bef9c77f00a565c9d1"
+    }
+}
