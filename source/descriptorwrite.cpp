@@ -55,11 +55,11 @@ R"({0}struct DescriptorSet{1}Writer {{
 		auto setImageMember = "pImageInfo";
 
 		auto bufferInfoSrc = "{0}  vk::DescriptorBufferInfo di{1};\n";
-		auto bufferInfoArraySrc = "{0}  vk::DescriptorBufferInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
+		auto bufferInfoArraySrc = "{0}  static constexpr size_t {3}Size = {2};\n{0}  vk::DescriptorBufferInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
 		auto bufferInfoVectorSrc = "{0}  std::vector<vk::DescriptorBufferInfo> di{1};\n{0}  size_t ic{1};\n";
 
 		auto imageInfoSrc = "{0}  vk::DescriptorImageInfo di{1};\n";
-		auto imageInfoArraySrc = "{0}  vk::DescriptorImageInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
+		auto imageInfoArraySrc = "{0}  static constexpr size_t {3}Size = {2};\n{0}  vk::DescriptorImageInfo di{1}[{2}];\n{0}  size_t ic{1};\n";
 		auto imageInfoVectorSrc = "{0}  std::vector<vk::DescriptorImageInfo> di{1};\n{0}  size_t ic{1};\n";
 
 		auto setSingleSrc =
@@ -181,7 +181,7 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 							format_to(i, ", ic{}(size_t(-1))", d.first);
 						}
 						else {
-							format_to(b, imageInfoArraySrc, indent, d.first, d.second.arraysize);
+							format_to(b, imageInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
 							format_to(i, ", ic{}(size_t(-1))", d.first);
 						}
 						break;
@@ -195,7 +195,7 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 							format_to(i, ", ic{}(size_t(-1))", d.first);
 						}
 						else {
-							format_to(b, bufferInfoArraySrc, indent, d.first, d.second.arraysize);
+							format_to(b, bufferInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
 							format_to(i, ", ic{}(size_t(-1))", d.first);
 						}
 						break;
