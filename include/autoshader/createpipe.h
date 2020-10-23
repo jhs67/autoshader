@@ -70,7 +70,7 @@ namespace autoshader {
 		auto dev = Arg<vk::Device>::get(std::forward<A>(a)...);
 		assert(dev != vk::Device{});
 
-		return dev.createComputePipelineUnique(cache, { flags, stage, layout });
+		return dev.createComputePipelineUnique(cache, { flags, stage, layout }).value;
 	}
 
 	struct SubPass {
@@ -195,7 +195,7 @@ namespace autoshader {
 		assert(dev != vk::Device{});
 
 		return dev.createGraphicsPipelineUnique(cache, { flags, stages.size(), stages.data(),
-			&vis, &ass, ptes, &vps, &ras, &mul, &dep, &col, pdyn, lay, pas, sub });
+			&vis, &ass, ptes, &vps, &ras, &mul, &dep, &col, pdyn, lay, pas, sub }).value;
 	}
 
 
