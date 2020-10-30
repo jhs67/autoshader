@@ -8,6 +8,7 @@
 #define H_AUTOSHADER_PIPELINE_H__
 
 #include "createpipe.h"
+#include <memory>
 
 namespace autoshader {
 
@@ -48,6 +49,11 @@ namespace autoshader {
 			}
 			auto x = components.createPipe(std::forward<A>(a)...);
 			pipeline = x.release();
+		}
+
+		void swap(Pipeline<Components> &o) {
+			components.swap(o.components);
+			std::swap(pipeline, o.pipeline);
 		}
 
 		operator vk::Pipeline () { return pipeline; }
