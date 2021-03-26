@@ -67,7 +67,6 @@ find_package(glm CONFIG REQUIRED)
 
 # link the catch runtime into a library
 add_library(${PROJECT_NAME}-main "main.cpp")
-set_target_properties(${PROJECT_NAME}-main PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(${PROJECT_NAME}-main Catch2::Catch2)
 
 add_custom_target(autoshader-test)
@@ -126,7 +125,6 @@ foreach(file ${files})
 
   # create the test executable
   add_executable(${testcase} ${test_files})
-  set_target_properties(${testcase} PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(${testcase} PRIVATE ${PROJECT_NAME}-main)
   target_link_libraries(${testcase} PRIVATE autoshader-lib)
   target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
@@ -135,7 +133,7 @@ foreach(file ${files})
   target_include_directories(${testcase} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
   if( AUTOSHADER_WarnAsError AND NOT MSVC )
-    set_target_properties(${testcase} PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+  	target_compile_options(${testcase} PRIVATE -Wall -Werror)
   endif()
 
   # setup the test
