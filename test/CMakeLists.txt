@@ -129,7 +129,6 @@ foreach(file ${files})
   target_link_libraries(${testcase} PRIVATE autoshader-lib)
   target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
   target_link_libraries(${testcase} PRIVATE Vulkan::Vulkan)
-  target_link_libraries(${testcase} PRIVATE glm)
   target_include_directories(${testcase} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
   if( AUTOSHADER_WarnAsError AND NOT MSVC )
