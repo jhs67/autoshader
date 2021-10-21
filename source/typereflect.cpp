@@ -110,9 +110,9 @@ namespace autoshader {
 		//-- add padding to an inline structure definition
 
 		void add_inline_pad(fmt::memory_buffer &r, int p) {
-			format_to(r, "float p0");
+			format_to(std::back_inserter(r), "float p0");
 			for (uint32_t i = 0; (p -= 4) > 0; )
-				format_to(r, ", p{}", ++i);
+				format_to(std::back_inserter(r), ", p{}", ++i);
 		}
 
 		//------------------------------------------------------------------------------------------
@@ -151,30 +151,30 @@ namespace autoshader {
 
 			if (arrpad != 0) {
 				// array pad pre-amble
-				format_to(r, "struct {{ ");
+				format_to(std::back_inserter(r), "struct {{ ");
 			}
 			if (colpad != 0) {
 				// column padding if needed
-				format_to(r, "struct {{ {} v; ", type_string_mapped(sh, coltype));
+				format_to(std::back_inserter(r), "struct {{ {} v; ", type_string_mapped(sh, coltype));
 				add_inline_pad(r, colpad);
-				format_to(r, "; }} ");
+				format_to(std::back_inserter(r), "; }} ");
 			}
 			else {
-				format_to(r, "{} ", type_string_mapped(sh, arrtype));
+				format_to(std::back_inserter(r), "{} ", type_string_mapped(sh, arrtype));
 			}
-			format_to(r, "{}", arrpad != 0 ? "v" : name);
+			format_to(std::back_inserter(r), "{}", arrpad != 0 ? "v" : name);
 			if (colpad != 0) {
-				format_to(r, "[{}]", arrtype.columns);
+				format_to(std::back_inserter(r), "[{}]", arrtype.columns);
 			}
 			if (arrpad != 0) {
-				format_to(r, "; ", name);
+				format_to(std::back_inserter(r), "; ", name);
 				add_inline_pad(r, arrpad);
-				format_to(r, "; }} {}", name);
+				format_to(std::back_inserter(r), "; }} {}", name);
 			}
 
 			// add the array elements
 			for (size_t i = type.array.size(); i-- != 0;) {
-				format_to(r, "[{}]", type.array[i]);
+				format_to(std::back_inserter(r), "[{}]", type.array[i]);
 				carrsize *= type.array[i];
 			}
 
@@ -200,10 +200,10 @@ namespace autoshader {
 				int &index, std::set<string> &members, const string& indent) {
 			if (offset >= target)
 				return;
-			format_to(r, "{}  float {}", indent, get_pad_name(index, members));
+			format_to(std::back_inserter(r), "{}  float {}", indent, get_pad_name(index, members));
 			while ((offset += 4) < target)
-				format_to(r, ", {}", get_pad_name(index, members));
-			format_to(r, ";\n");
+				format_to(std::back_inserter(r), ", {}", get_pad_name(index, members));
+			format_to(std::back_inserter(r), ";\n");
 		}
 
 
@@ -281,7 +281,7 @@ namespace autoshader {
 		if (type.basetype != SPIRType::Struct)
 			throw std::runtime_error("struct_definition called on non-struct");
 
-		format_to(r, "{}struct {} {{\n", indent, sh.names[t]);
+		format_to(std::back_inserter(r), "{}struct {} {{\n", indent, sh.names[t]);
 
 		// keep track of pad variables
 		int padindex = 0;
@@ -295,11 +295,11 @@ namespace autoshader {
 			add_padding(r, offset, comp.type_struct_member_offset(type, i), padindex,
 				members, indent);
 
-			format_to(r, "{}  ", indent);
+			format_to(std::back_inserter(r), "{}  ", indent);
 
 			// add the member declaration
 			auto csize = declare_member(r, sh, t, i);
-			format_to(r, ";\n");
+			format_to(std::back_inserter(r), ";\n");
 
 			// update the size of the c structure
 			offset += csize;
@@ -308,7 +308,7 @@ namespace autoshader {
 		// pad up to the declared structure size (can this happen?)
 		add_padding(r, offset, comp.get_declared_struct_size(type), padindex, members, indent);
 
-		format_to(r, "{}}}", indent);
+		format_to(std::back_inserter(r), "{}}}", indent);
 	}
 
 } // namespace autoshader

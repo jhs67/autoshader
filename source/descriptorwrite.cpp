@@ -154,7 +154,7 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 				srcf = setArraySrc;
 
 			// format the source
-			format_to(r, srcf, indent, name, d.name, set, argf, infof, writeLimit,
+			format_to(std::back_inserter(r), srcf, indent, name, d.name, set, argf, infof, writeLimit,
 				vulkan_descriptor_type(d.type), writef, d.arraysize, memberf);
 		}
 
@@ -174,40 +174,40 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 					case DescriptorType::SampledImage:
 					case DescriptorType::StorageImage:
 						if (d.second.arraysize == 1) {
-							format_to(b, imageInfoSrc, indent, d.first);
+							format_to(std::back_inserter(b), imageInfoSrc, indent, d.first);
 						}
 						else if (d.second.arraysize == 0) {
-							format_to(b, imageInfoVectorSrc, indent, d.first);
-							format_to(i, ", ic{}(size_t(-1))", d.first);
+							format_to(std::back_inserter(b), imageInfoVectorSrc, indent, d.first);
+							format_to(std::back_inserter(i), ", ic{}(size_t(-1))", d.first);
 						}
 						else {
-							format_to(b, imageInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
-							format_to(i, ", ic{}(size_t(-1))", d.first);
+							format_to(std::back_inserter(b), imageInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
+							format_to(std::back_inserter(i), ", ic{}(size_t(-1))", d.first);
 						}
 						break;
 					case DescriptorType::Uniform:
 					case DescriptorType::StorageBuffer:
 						if (d.second.arraysize == 1) {
-							format_to(b, bufferInfoSrc, indent, d.first);
+							format_to(std::back_inserter(b), bufferInfoSrc, indent, d.first);
 						}
 						else if (d.second.arraysize == 0) {
-							format_to(b, bufferInfoVectorSrc, indent, d.first);
-							format_to(i, ", ic{}(size_t(-1))", d.first);
+							format_to(std::back_inserter(b), bufferInfoVectorSrc, indent, d.first);
+							format_to(std::back_inserter(i), ", ic{}(size_t(-1))", d.first);
 						}
 						else {
-							format_to(b, bufferInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
-							format_to(i, ", ic{}(size_t(-1))", d.first);
+							format_to(std::back_inserter(b), bufferInfoArraySrc, indent, d.first, d.second.arraysize, d.second.name);
+							format_to(std::back_inserter(i), ", ic{}(size_t(-1))", d.first);
 						}
 						break;
 				}
 			}
-			format_to(b, "\n");
+			format_to(std::back_inserter(b), "\n");
 			for (auto &d : set.descriptors) {
 				set_generic_src(b, name, indent, d.first, d.second,
 				set.descriptors.size());
 			}
 
-			format_to(r, writerSrc, indent, name, set.descriptors.size(), to_string(b),
+			format_to(std::back_inserter(r), writerSrc, indent, name, set.descriptors.size(), to_string(b),
 				to_string(i));
 		}
 

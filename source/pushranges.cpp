@@ -142,18 +142,18 @@ namespace autoshader {
 		}
 
 		bool c = false;
-		format_to(r, "{}inline auto getPushConstantRanges() {{\n", indent);
-		format_to(r, "{}  return std::array<vk::PushConstantRange, {}>({{{{", indent,
+		format_to(std::back_inserter(r), "{}inline auto getPushConstantRanges() {{\n", indent);
+		format_to(std::back_inserter(r), "{}  return std::array<vk::PushConstantRange, {}>({{{{", indent,
 			flagranges.size());
 		for (auto &d : flagranges) {
-			format_to(r, c ? ",\n" : "\n");
-			format_to(r, "{}    {{ ", indent);
+			format_to(std::back_inserter(r), c ? ",\n" : "\n");
+			format_to(std::back_inserter(r), "{}    {{ ", indent);
 			vulkan_stage_flags(r, d.stages);
-			format_to(r, ", {}, {}, ", d.start, d.end - d.start);
-			format_to(r, " }}");
+			format_to(std::back_inserter(r), ", {}, {}, ", d.start, d.end - d.start);
+			format_to(std::back_inserter(r), " }}");
 			c = true;
 		}
-		format_to(r, "\n{}  }}}});\n{}}}\n\n", indent, indent);
+		format_to(std::back_inserter(r), "\n{}  }}}});\n{}}}\n\n", indent, indent);
 
 		return true;
 	}

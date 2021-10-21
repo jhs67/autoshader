@@ -37,10 +37,10 @@ namespace autoshader {
 	void shader_source_decl(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent) {
 		for (auto &s : sh) {
 			auto p = get_execution_string(*s.comp);
-			format_to(r, "{}extern const uint32_t {}_size;\n", indent, p);
-			format_to(r, "{}extern const uint32_t {}_data[];\n", indent, p);
+			format_to(std::back_inserter(r), "{}extern const uint32_t {}_size;\n", indent, p);
+			format_to(std::back_inserter(r), "{}extern const uint32_t {}_data[];\n", indent, p);
 		}
-		format_to(r, "\n");
+		format_to(std::back_inserter(r), "\n");
 	}
 
 
@@ -50,24 +50,24 @@ namespace autoshader {
 	void shader_source(fmt::memory_buffer &r, vector<ShaderRecord> &sh, const string& indent,
 			bool ifdef) {
 		if (ifdef)
-			format_to(r, "#ifdef AUTOSHADER_SOURCE_DATA\n\n");
+			format_to(std::back_inserter(r), "#ifdef AUTOSHADER_SOURCE_DATA\n\n");
 		for (auto &s : sh) {
 			auto p = get_execution_string(*s.comp);
-			format_to(r, "{}extern const uint32_t {}_size = {};\n", indent, p,
+			format_to(std::back_inserter(r), "{}extern const uint32_t {}_size = {};\n", indent, p,
 				sizeof(uint32_t) * s.source.size());
-			format_to(r, "{}extern const uint32_t {}_data[] = {{\n", indent, p);
+			format_to(std::back_inserter(r), "{}extern const uint32_t {}_data[] = {{\n", indent, p);
 			for (size_t i = 0; i < s.source.size();) {
-				format_to(r, "{}  ", indent);
+				format_to(std::back_inserter(r), "{}  ", indent);
 				for (size_t j = 0; i < s.source.size() && j < 8; ++j, ++i) {
-					format_to(r, "0x{:08x}{}", s.source[i], i == s.source.size() - 1 ? "" : ",");
+					format_to(std::back_inserter(r), "0x{:08x}{}", s.source[i], i == s.source.size() - 1 ? "" : ",");
 				}
-				format_to(r, "\n");
+				format_to(std::back_inserter(r), "\n");
 			}
-			format_to(r, "{}}};\n", indent);
+			format_to(std::back_inserter(r), "{}}};\n", indent);
 		}
 		if (ifdef)
-			format_to(r, "\n#endif // AUTOSHADER_SOURCE_DATA\n");
-		format_to(r, "\n");
+			format_to(std::back_inserter(r), "\n#endif // AUTOSHADER_SOURCE_DATA\n");
+		format_to(std::back_inserter(r), "\n");
 	}
 
 } // namespace autoshader

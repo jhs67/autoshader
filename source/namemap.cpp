@@ -59,12 +59,12 @@ namespace autoshader {
 			using spirv_cross::SPIRType;
 			auto type = comp.get_type(t);
 			if (type.basetype == SPIRType::Struct) {
-				format_to(r, "{{");
+				format_to(std::back_inserter(r), "{{");
 				struct_signature(r, comp, type.self);
-				format_to(r, "}}");
+				format_to(std::back_inserter(r), "}}");
 			}
 			else {
-				format_to(r, "{}", type_string(comp, type));
+				format_to(std::back_inserter(r), "{}", type_string(comp, type));
 			}
 		}
 
@@ -77,20 +77,20 @@ namespace autoshader {
 			if (type.basetype != SPIRType::Struct)
 				throw std::runtime_error("struct_signature called on non-struct");
 
-			format_to(r, "{},{:09d}:", comp.get_name(t), comp.get_declared_struct_size(type));
+			format_to(std::back_inserter(r), "{},{:09d}:", comp.get_name(t), comp.get_declared_struct_size(type));
 
 			for (uint32_t i = 0; size_t(i) < type.member_types.size(); ++i) {
 				auto mtype = comp.get_type(type.member_types[i]);
-				format_to(r, "{},", comp.get_member_name(t, i));
+				format_to(std::back_inserter(r), "{},", comp.get_member_name(t, i));
 				type_signature(r, comp, type.member_types[i]);
-				format_to(r, ",{}", comp.type_struct_member_offset(type, i));
+				format_to(std::back_inserter(r), ",{}", comp.type_struct_member_offset(type, i));
 				if (mtype.columns > 1)
-					format_to(r, ";{}", comp.type_struct_member_matrix_stride(type, i));
+					format_to(std::back_inserter(r), ";{}", comp.type_struct_member_matrix_stride(type, i));
 				if (!mtype.array.empty())
-					format_to(r, ",{}", comp.type_struct_member_array_stride(type, i));
+					format_to(std::back_inserter(r), ",{}", comp.type_struct_member_array_stride(type, i));
 				for (auto t : mtype.array)
-					format_to(r, ",{}", t);
-				format_to(r, ":");
+					format_to(std::back_inserter(r), ",{}", t);
+				format_to(std::back_inserter(r), ":");
 			}
 		}
 

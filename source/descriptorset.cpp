@@ -91,8 +91,8 @@ namespace autoshader {
 		bool s = false;
 		for (auto e : stages) {
 			if (s)
-				format_to(r, " | ");
-			format_to(r, "{}", vulkan_stage_string(e));
+				format_to(std::back_inserter(r), " | ");
+			format_to(std::back_inserter(r), "{}", vulkan_stage_string(e));
 			s = true;
 		}
 	}
@@ -146,22 +146,22 @@ R"({0}inline auto get{1}LayoutBindings({2}) {{
 		bool c = false;
 		fmt::memory_buffer a, b;
 		for (auto &d : set.descriptors) {
-			format_to(b, "{}{}    {{ {}, {}, ", c ? ",\n" : "\n", indent,
+			format_to(std::back_inserter(b), "{}{}    {{ {}, {}, ", c ? ",\n" : "\n", indent,
 				d.first, vulkan_descriptor_type(d.second.type));
 			if (d.second.arraysize == 0) {
-				format_to(b, "a{}, ", args);
-				format_to(a, "{}uint32_t a{}", args ? ", " : "", args);
+				format_to(std::back_inserter(b), "a{}, ", args);
+				format_to(std::back_inserter(a), "{}uint32_t a{}", args ? ", " : "", args);
 				args += 1;
 			}
 			else {
-				format_to(b, "{}, ", d.second.arraysize);
+				format_to(std::back_inserter(b), "{}, ", d.second.arraysize);
 			}
 			vulkan_stage_flags(b, d.second.stages);
-			format_to(b, " }}");
+			format_to(std::back_inserter(b), " }}");
 			c = true;
 		}
 
-		format_to(r, layoutSrc, indent, name, to_string(a), set.descriptors.size(), to_string(b));
+		format_to(std::back_inserter(r), layoutSrc, indent, name, to_string(a), set.descriptors.size(), to_string(b));
 	}
 
 

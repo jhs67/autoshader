@@ -63,11 +63,11 @@ R"(
 
 			auto type = comp.get_type(comp.get_constant(id).constant_type);
 			if (type.basetype == spirv_cross::SPIRType::Float) {
-				format_to(r, floatSrc, indent, name, count, type_string(comp, type),
+				format_to(std::back_inserter(r), floatSrc, indent, name, count, type_string(comp, type),
 					constantID, specname);
 			}
 			else {
-				format_to(r, intSrc, indent, name, count, type_string(comp, type),
+				format_to(std::back_inserter(r), intSrc, indent, name, count, type_string(comp, type),
 					constantID, specname);
 			}
 		}
@@ -104,7 +104,7 @@ R"(
 			if (specs.empty())
 				return;
 
-			format_to(r, writerSrc, indent, capitalize(pre), specs.size(),
+			format_to(std::back_inserter(r), writerSrc, indent, capitalize(pre), specs.size(),
 				get_shader_stage_flags(comp));
 
 			for (auto &t : specs) {
@@ -112,7 +112,7 @@ R"(
 					t.second.id, t.second.name, t.first, capitalize(pre));
 			}
 
-			format_to(r, "{0}}};\n\n", indent);
+			format_to(std::back_inserter(r), "{0}}};\n\n", indent);
 		}
 	}
 

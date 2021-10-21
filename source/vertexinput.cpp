@@ -62,12 +62,12 @@ namespace autoshader {
 				throw std::runtime_error("unexpected type for vertex format");
 
 			fmt::memory_buffer r;
-			format_to(r, "vk::Format::e");
+			format_to(std::back_inserter(r), "vk::Format::e");
 			static constexpr char components[4] = { 'R', 'G', 'B', 'A' };
 			for (uint32_t i = 0; i < type.vecsize && i < 4; ++i) {
-				format_to(r, "{}{}", components[i], bits);
+				format_to(std::back_inserter(r), "{}{}", components[i], bits);
 			}
-			format_to(r, "{}", ext);
+			format_to(std::back_inserter(r), "{}", ext);
 			return to_string(r);
 		}
 
@@ -83,31 +83,31 @@ namespace autoshader {
 		if (res.stage_inputs.empty())
 			return false;
 
-		format_to(r, "{}struct {} {{\n", indent, name);
+		format_to(std::back_inserter(r), "{}struct {} {{\n", indent, name);
 		for (auto &v : res.stage_inputs) {
 			auto var = comp.get_type(v.type_id);
 			auto type = comp.get_type(v.base_type_id);
-			format_to(r, "{}  {} {}", indent, type_string(comp, type), v.name);
+			format_to(std::back_inserter(r), "{}  {} {}", indent, type_string(comp, type), v.name);
 			for (size_t i = var.array.size(); i-- != 0;)
-				format_to(r, "[{}]", var.array[i]);
-			format_to(r, ";\n");
+				format_to(std::back_inserter(r), "[{}]", var.array[i]);
+			format_to(std::back_inserter(r), ";\n");
 		}
-		format_to(r, "{}}};\n\n", indent);
+		format_to(std::back_inserter(r), "{}}};\n\n", indent);
 
-		format_to(r, "{}auto getVertexBindingDescription() {{\n", indent);
-		format_to(r, "{}  return std::array<vk::VertexInputBindingDescription, 1>({{{{\n", indent);
-		format_to(r, "{}    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", indent, name);
-		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
+		format_to(std::back_inserter(r), "{}auto getVertexBindingDescription() {{\n", indent);
+		format_to(std::back_inserter(r), "{}  return std::array<vk::VertexInputBindingDescription, 1>({{{{\n", indent);
+		format_to(std::back_inserter(r), "{}    {{ 0, sizeof({}), vk::VertexInputRate::eVertex }}\n", indent, name);
+		format_to(std::back_inserter(r), "{}  }}}});\n{}}}\n\n", indent, indent);
 
-		format_to(r, "{}inline auto getVertexAttributeDescriptions() {{\n", indent);
-		format_to(r, "{}  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
+		format_to(std::back_inserter(r), "{}inline auto getVertexAttributeDescriptions() {{\n", indent);
+		format_to(std::back_inserter(r), "{}  return std::array<vk::VertexInputAttributeDescription, {}>({{{{\n",
 			indent, res.stage_inputs.size());
 		for (auto &v : res.stage_inputs) {
-			format_to(r, "{}    {{ {}, 0, {}, offsetof({}, {}) }},\n", indent,
+			format_to(std::back_inserter(r), "{}    {{ {}, 0, {}, offsetof({}, {}) }},\n", indent,
 				comp.get_decoration(v.id, spv::DecorationLocation),
 				vertex_format_string(comp, v.base_type_id), name, v.name);
 		}
-		format_to(r, "{}  }}}});\n{}}}\n\n", indent, indent);
+		format_to(std::back_inserter(r), "{}  }}}});\n{}}}\n\n", indent, indent);
 		return true;
 	}
 

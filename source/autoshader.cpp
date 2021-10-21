@@ -163,7 +163,7 @@ namespace autoshader {
 		// Generate the output
 		fmt::memory_buffer r;
 		fmt::memory_buffer dr;
-		format_to(r, "// generated with {}\n\n", prog);
+		format_to(std::back_inserter(r), "// generated with {}\n\n", prog);
 
 		// figure out the namespace
 		vector<string> namespaces;
@@ -173,20 +173,20 @@ namespace autoshader {
 
 		if (!namespaces.empty()) {
 			for (size_t i = 0; i < namespaces.size(); ++i)
-				format_to(r, "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
-			format_to(r, "\n\n");
+				format_to(std::back_inserter(r), "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
+			format_to(std::back_inserter(r), "\n\n");
 
 			if (options.count("data")) {
 				for (size_t i = 0; i < namespaces.size(); ++i)
-					format_to(dr, "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
-				format_to(dr, "\n\n");
+					format_to(std::back_inserter(dr), "{}namespace {} {{", i == 0 ? "" : " ", namespaces[i]);
+				format_to(std::back_inserter(dr), "\n\n");
 			}
 		}
 
 		for (auto &sh : shaders) {
 			for (auto t : sh.structs) {
 				struct_definition(r, sh, t, indent);
-				format_to(r, ";\n\n");
+				format_to(std::back_inserter(r), ";\n\n");
 			}
 		}
 
@@ -224,13 +224,13 @@ namespace autoshader {
 
 		if (!namespaces.empty()) {
 			for (size_t i = 0; i < namespaces.size(); ++i)
-				format_to(r, "{}}}", i == 0 ? "" : " ");
-			format_to(r, "\n");
+				format_to(std::back_inserter(r), "{}}}", i == 0 ? "" : " ");
+			format_to(std::back_inserter(r), "\n");
 
 			if (options.count("data")) {
 				for (size_t i = 0; i < namespaces.size(); ++i)
-					format_to(dr, "{}}}", i == 0 ? "" : " ");
-				format_to(dr, "\n");
+					format_to(std::back_inserter(dr), "{}}}", i == 0 ? "" : " ");
+				format_to(std::back_inserter(dr), "\n");
 			}
 		}
 
