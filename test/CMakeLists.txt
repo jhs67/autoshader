@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 # compile a shader into a spirv file
-function(compile_spirv_shader source)
+function(autoshader_test_compile_spirv_shader source)
   cmake_parse_arguments(arg "" "OUTPUT" "DEPENDS" "${ARGN}")
 
   # figure out the output name
@@ -103,7 +103,7 @@ set(shaders
 
 # compile the shaders to spirv
 foreach(shader ${shaders})
-  compile_spirv_shader(${shader})
+  autoshader_test_compile_spirv_shader(${shader})
 endforeach(shader)
 
 foreach(file ${files})
