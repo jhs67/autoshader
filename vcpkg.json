@@ -9,7 +9,7 @@
         "spirv-cross"
     ],
     "$pkgxx": {
-        "source": "https://github.com/microsoft/vcpkg/archive/14543ba18235846803ab1d3534cf2f63c6024b20.tar.gz",
-        "sha256": "98831f06acb687c2d8633be9dd7d01f4a6fc37f1fbe9e12e01625dc2c136d032"
+        "source": "https://github.com/microsoft/vcpkg/archive/refs/tags/2022.04.12.tar.gz",
+        "sha256": "ab52b2d5a714349108cabe3a4dc059a0a2645951a6b023f1f9575de3d4675fb3"
     }
 }
