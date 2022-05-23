@@ -4,8 +4,8 @@
 //  Created by Jon Spencer on 2019-02-12 11:42:13
 //  Copyright (c) Jon Spencer. See LICENSE file.
 //
-#ifndef H_AUTOSHADER_CREATEPIPE_H__
-#define H_AUTOSHADER_CREATEPIPE_H__
+#ifndef H_AUTOSHADER_CREATEPIPE
+#define H_AUTOSHADER_CREATEPIPE
 
 #include "anyarg.h"
 #include "vulkan/vulkan.hpp"
@@ -44,7 +44,9 @@ namespace autoshader {
 			"need a stage or shader module for a compute pipeline");
 
 		// flags
-	 	auto flags = Arg<vk::PipelineCreateFlags>::dget({}, std::forward<A>(a)...);
+		auto flags = Arg<vk::PipelineCreateFlags>::dget(
+			Arg<vk::PipelineCreateFlagBits>::dget({}, std::forward<A>(a)...),
+			std::forward<A>(a)...);
 
 	 	// check for shader module and entry name
 		auto module = Arg<vk::ShaderModule>::dget({}, std::forward<A>(a)...);
@@ -95,7 +97,9 @@ namespace autoshader {
 			"createGraphicsPipe needs a vk::RenderPass argument");
 
 		// get the flags and stages
-	 	auto flags = Arg<vk::PipelineCreateFlags>::dget({}, std::forward<A>(a)...);
+		auto flags = Arg<vk::PipelineCreateFlags>::dget(
+			Arg<vk::PipelineCreateFlagBits>::dget({}, std::forward<A>(a)...),
+			std::forward<A>(a)...);
 		auto stages = Arg<vk::PipelineShaderStageCreateInfo>::gather(std::forward<A>(a)...);
 		static_assert(stages.size() > 1, "need at least two stages for a graphics pipeline");
 
@@ -149,7 +153,10 @@ namespace autoshader {
 		// resterization state
 		auto ras = Arg<vk::PipelineRasterizationStateCreateInfo>::dget({ {}, false, false,
 			Arg<vk::PolygonMode>::dget(vk::PolygonMode::eFill, std::forward<A>(a)...),
-			Arg<vk::CullModeFlags>::dget(vk::CullModeFlagBits::eNone, std::forward<A>(a)...),
+			Arg<vk::CullModeFlags>::dget(
+				Arg<vk::CullModeFlagBits>::dget(vk::CullModeFlagBits::eNone,
+					std::forward<A>(a)...),
+				std::forward<A>(a)...),
 			Arg<vk::FrontFace>::dget(vk::FrontFace::eClockwise, std::forward<A>(a)...),
 			0, 0, 0, 0, 1 }, std::forward<A>(a)...);
 
@@ -228,4 +235,4 @@ namespace autoshader {
 
 } // namespace autoshader
 
-#endif // H_AUTOSHADER_CREATEPIPE_H__
+#endif // H_AUTOSHADER_CREATEPIPE
