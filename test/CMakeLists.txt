@@ -65,10 +65,6 @@ find_package(Vulkan REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
-# link the catch runtime into a library
-add_library(${PROJECT_NAME}-main "main.cpp")
-target_link_libraries(${PROJECT_NAME}-main Catch2::Catch2)
-
 add_custom_target(autoshader-test)
 
 set(files
@@ -125,9 +121,8 @@ foreach(file ${files})
 
   # create the test executable
   add_executable(${testcase} ${test_files})
-  target_link_libraries(${testcase} PRIVATE ${PROJECT_NAME}-main)
   target_link_libraries(${testcase} PRIVATE autoshader-lib)
-  target_link_libraries(${testcase} PRIVATE Catch2::Catch2)
+  target_link_libraries(${testcase} PRIVATE Catch2::Catch2WithMain)
   target_link_libraries(${testcase} PRIVATE Vulkan::Vulkan)
   target_include_directories(${testcase} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
