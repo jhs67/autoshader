@@ -111,6 +111,8 @@ R"({0}  DescriptorSet{1}Writer& set{2}({4}) {{
 			// get the type specific parts
 			const char *argf, *infof, *writef, *memberf;
 			switch (d.type) {
+				default:
+					assert(false);
 				case DescriptorType::Sampler:
 					argf = setSamplerArgs;
 					infof = setSamplerInfo;
