@@ -93,6 +93,9 @@ install(TARGETS ${PROJECT_NAME}-lib EXPORT ${PROJECT_NAME}-export)
 # install the headers
 install(FILES ${includes} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/autoshader")
 
+# install cmake module
+install(FILES cmake/autoshader.cmake DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
+
 # install the cmake config files
 set(config_install_dir "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
 
@@ -106,15 +109,19 @@ write_basic_package_version_file(
 # create config template file
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/autoshader-config.cmake.in" [=[
 @PACKAGE_INIT@
-include("@PACKAGE_PATH_EXPORT_TARGETS@")
+if(NOT TARGET autoshader::@PROJECT_NAME@-lib)
+	list(APPEND CMAKE_MODULE_PATH "@PACKAGE_PATH_MODULE_PATH@")
+	include("@PACKAGE_PATH_EXPORT_TARGETS@")
+endif()
 ]=])
 
 # create config file
+set(PATH_MODULE_PATH "${config_install_dir}")
 set(PATH_EXPORT_TARGETS "${config_install_dir}/autoshader-targets.cmake")
 configure_package_config_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/autoshader-config.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/autoshader-config.cmake"
-	PATH_VARS PATH_EXPORT_TARGETS
+	PATH_VARS PATH_EXPORT_TARGETS PATH_MODULE_PATH
 	INSTALL_DESTINATION "${config_install_dir}"
 )
 
